@@ -938,11 +938,8 @@
   function confirmReset() {
     closeResetModal();
     localStorage.removeItem(curKey());
-    rows = []; idCounter = 0; rateHourly = 0;
-    document.getElementById('rateHourly').value = '';
-    document.getElementById('tableBody').innerHTML = '';
-    document.getElementById('mobileList').innerHTML = '';
-    WEEK_NAMES.forEach(n => { const id = idCounter++; rows.push({ id, name: n, workEntries:[] }); appendRowDOM(id); updateTrigger(id); }); renderMonthBar(); calcTotal(); showToast('🗑 초기화되었습니다');
+    loadMonth();
+    showToast('🗑 초기화되었습니다');
   }
 
   function exportExcel() {
@@ -1157,18 +1154,14 @@
   let workEntriesTemp = [];
   let curWeekIdx = 0; // 현재 선택된 주차 인덱스
 
-  // 해당 연월의 주차 배열 계산 (월요일 기준)
-  // 반환: [{label:'1주차', range:'6/2~6/8', start:Date, end:Date}, ...]
   function getWeeksOfMonth(year, month) {
     const weeks = [];
-    const firstDay = new Date(year, month - 1, 1);
-    const lastDay  = new Date(year, month, 0);
+    // 시간대 오류 방지: 정오(12:00)로 고정
+    const firstDay = new Date(year, month - 1, 1, 12, 0, 0);
+    const lastDay  = new Date(year, month, 0, 12, 0, 0);
 
-    // 첫 번째 월요일 찾기 (같은 달 기준)
-    // 달의 첫날이 속한 주의 월요일부터 시작
     let weekStart = new Date(firstDay);
-    const dow = weekStart.getDay(); // 0=일,1=월,...
-    // 해당 주의 월요일로 이동 (일요일이면 -6, 월요일이면 0, ...)
+    const dow = weekStart.getDay();
     const diffToMon = dow === 0 ? -6 : 1 - dow;
     weekStart.setDate(weekStart.getDate() + diffToMon);
 
@@ -1177,16 +1170,15 @@
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
 
-      // 이 주에 해당 달 날짜가 하나라도 있으면 포함
-      const effStart = weekStart < firstDay ? firstDay : weekStart;
-      const effEnd   = weekEnd   > lastDay  ? lastDay  : weekEnd;
+      const effStart = weekStart < firstDay ? new Date(firstDay) : new Date(weekStart);
+      const effEnd   = weekEnd   > lastDay  ? new Date(lastDay)  : new Date(weekEnd);
 
       const fmt2 = d => `${d.getMonth()+1}/${d.getDate()}`;
       weeks.push({
         label: `${weekNum}주차`,
         range: `${fmt2(effStart)}~${fmt2(effEnd)}`,
-        start: new Date(effStart),
-        end:   new Date(effEnd),
+        start: effStart,
+        end:   effEnd,
       });
 
       weekNum++;
@@ -1195,10 +1187,11 @@
     return weeks;
   }
 
-  // 날짜 문자열(YYYY-MM-DD)이 어느 주차에 속하는지 반환 (인덱스)
   function getWeekIdxForDate(dateStr, weeks) {
     if (!dateStr) return -1;
-    const d = new Date(dateStr + 'T00:00:00');
+    // 정오로 파싱해서 시간대 문제 방지
+    const parts = dateStr.split('-');
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 12, 0, 0);
     for (let i = 0; i < weeks.length; i++) {
       if (d >= weeks[i].start && d <= weeks[i].end) return i;
     }
@@ -1317,17 +1310,36 @@
         dateInp.className = 'date-input-styled';
         dateInp.style.cssText = 'flex:1;min-width:120px;width:100%;background:#fff;border:1.5px solid #b0b6d0;color:#1a1e30;';
         dateInp.value = entry.date || '';
+        const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         if (week) {
-          const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
           dateInp.min = pad(week.start);
           dateInp.max = pad(week.end);
         }
         dateInp.oninput = () => {
-          workEntriesTemp[origIdx].date = dateInp.value;
+          const val = dateInp.value;
+          if (!val) return;
+          const wk2 = getWeeksOfMonth(curYear, curMonth);
+          const w = wk2[curWeekIdx];
+          // 선택된 주차 범위 밖이면 강제로 해당 주차 첫날로 되돌림
+          if (w) {
+            const minStr = pad(w.start);
+            const maxStr = pad(w.end);
+            if (val < minStr || val > maxStr) {
+              dateInp.value = minStr;
+              dateInp.style.borderColor = '#e04040';
+              setTimeout(() => { dateInp.style.borderColor = '#b0b6d0'; }, 800);
+              workEntriesTemp[origIdx].date = minStr;
+              setDateLabel(minStr);
+              updateCalFooter();
+              renderWeekTabs(wk2);
+              return;
+            }
+          }
+          workEntriesTemp[origIdx].date = val;
           delete workEntriesTemp[origIdx]._weekHint;
-          setDateLabel(dateInp.value);
+          setDateLabel(val);
           updateCalFooter();
-          renderWeekTabs(getWeeksOfMonth(curYear, curMonth));
+          renderWeekTabs(wk2);
         };
 
         // 시간 입력
@@ -1418,9 +1430,12 @@
   }
 
   function addWorkEntry() {
-    // 새 항목을 현재 주차 힌트와 함께 추가
-    workEntriesTemp.push({ date: '', hours: '', mins: '', _weekHint: curWeekIdx });
     const wk = getWeeksOfMonth(curYear, curMonth);
+    const w = wk[curWeekIdx];
+    // 현재 주차 첫날을 기본 날짜로 설정
+    const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const defaultDate = w ? pad(w.start) : '';
+    workEntriesTemp.push({ date: defaultDate, hours: '', mins: '', _weekHint: curWeekIdx });
     renderWeekTabs(wk);
     renderWorkEntriesForWeek(wk);
     const list = document.getElementById('workEntryList');
@@ -1464,10 +1479,10 @@
     const m = parseInt(document.getElementById('rangeMins').value||'0', 10) || 0;
     const preview = document.getElementById('rangePreview');
     if (!start || !end) { preview.textContent = ''; return; }
-    const s = new Date(start + 'T00:00:00');
-    const e = new Date(end   + 'T00:00:00');
+    const parseDate = str => { const p = str.split('-'); return new Date(+p[0], +p[1]-1, +p[2], 12, 0, 0); };
+    const s = parseDate(start);
+    const e = parseDate(end);
     if (s > e) { preview.textContent = '⚠️ 시작일이 종료일보다 늦습니다'; preview.style.color = 'var(--danger)'; return; }
-    // 주차 범위 초과 경고
     const wk = getWeeksOfMonth(curYear, curMonth);
     const w = wk[curWeekIdx];
     if (w && (s < w.start || e > w.end)) {
@@ -1475,7 +1490,7 @@
       preview.style.color = 'var(--danger)'; return;
     }
     const days = Math.round((e - s) / 86400000) + 1;
-    const timeStr = h || m ? `${h}h${m ? m+'m' : ''}` : '시간 미입력';
+    const timeStr = h || m ? `${h}시간${m ? m+'분' : ''}` : '시간 미입력';
     preview.style.color = 'var(--green)';
     preview.textContent = `→ ${days}일 각각 ${timeStr} 추가됩니다`;
   }
@@ -1485,22 +1500,20 @@
     const end   = document.getElementById('rangeEnd').value;
     const h = parseInt(document.getElementById('rangeHours').value||'0', 10) || 0;
     const m = parseInt(document.getElementById('rangeMins').value||'0', 10) || 0;
-    if (!start || !end) { alert('시작일과 종료일을 입력하세요.'); return; }
-    const s = new Date(start + 'T00:00:00');
-    const e = new Date(end   + 'T00:00:00');
-    if (s > e) { alert('시작일이 종료일보다 늦습니다.'); return; }
-    // 현재 주차 범위 검증
+    if (!start || !end) { showToast('⚠️ 시작일과 종료일을 입력하세요'); return; }
+    const parseDate = str => { const p = str.split('-'); return new Date(+p[0], +p[1]-1, +p[2], 12, 0, 0); };
+    const s = parseDate(start);
+    const e = parseDate(end);
+    if (s > e) { showToast('⚠️ 시작일이 종료일보다 늦습니다'); return; }
     const wk = getWeeksOfMonth(curYear, curMonth);
     const w = wk[curWeekIdx];
     if (w && (s < w.start || e > w.end)) {
-      alert(`${w.label} 범위(${w.range})를 벗어납니다.
-해당 주차 날짜만 선택해주세요.`); return;
+      showToast(`⚠️ ${w.label}(${w.range}) 범위를 벗어납니다`); return;
     }
     const pad2 = n => String(n).padStart(2,'0');
     let cur = new Date(s);
     while (cur <= e) {
       const dateStr = `${cur.getFullYear()}-${pad2(cur.getMonth()+1)}-${pad2(cur.getDate())}`;
-      // 이미 같은 날짜 있으면 덮어쓰기
       const existing = workEntriesTemp.findIndex(en => en.date === dateStr);
       if (existing >= 0) {
         workEntriesTemp[existing].hours = h;
