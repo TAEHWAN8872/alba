@@ -474,11 +474,11 @@
   <div class="summary-stats">
     <div class="summary-stat">
       <span class="summary-stat-label">총 근무시간</span>
-      <span class="summary-stat-value green" id="totalHoursDisplay">0h</span>
+      <span class="summary-stat-value green" id="totalHoursDisplay">0시간</span>
     </div>
     <div class="summary-stat">
       <span class="summary-stat-label">주휴시간</span>
-      <span class="summary-stat-value yellow" id="totalHolidayHoursDisplay">0h</span>
+      <span class="summary-stat-value yellow" id="totalHolidayHoursDisplay">0시간</span>
     </div>
     <div class="summary-stat">
       <span class="summary-stat-label">근무일</span>
@@ -1060,7 +1060,7 @@
     const total = calcRow(row);
     const holiday = calcHolidayPay(row);
     const totalWithHoliday = total + holiday;
-    const hoursStr = mins > 0 ? `${Math.floor(mins/60)}h ${mins%60}m` : '–';
+    const hoursStr = mins > 0 ? `${Math.floor(mins/60)}시간 ${mins%60}분` : '–';
     const rateDisp = rateHourly ? '₩'+fmt(rateHourly)+'/h' : '–';
     const rateClass = rateHourly ? '' : 'none';
     const resultClass = total > 0 ? 'has-val' : '';
@@ -1124,7 +1124,7 @@
         </div>
         <div class="mobile-field" style="grid-column:1/-1">
           <label>총 근무시간</label>
-          <div style="font-weight:600;font-size:0.95rem;color:${mins>0?'var(--text)':'var(--muted)'};" id="mhours-${id}">${mins>0?Math.floor(mins/60)+'h '+mins%60+'m':'–'}</div>
+          <div style="font-weight:600;font-size:0.95rem;color:${mins>0?'var(--text)':'var(--muted)'};" id="mhours-${id}">${mins>0?Math.floor(mins/60)+'시간 '+mins%60+'분':'–'}</div>
         </div>
         <div class="mobile-field">
           <label>주휴수당 <span style="font-weight:400;opacity:.7">(주 15h↑)</span></label>
@@ -1141,7 +1141,7 @@
     if (!row.workEntries || row.workEntries.length === 0) return '';
     return row.workEntries.slice(0,5).map(e => {
       const h = parseInt(e.hours||0,10), m = parseInt(e.mins||0,10);
-      const timeStr = h||m ? ` ${h}h${m?m+'m':''}` : '';
+      const timeStr = h||m ? ` ${h}시간${m?m+'분':''}` : '';
       // 날짜를 월.일 형식으로 간결하게
       let dateStr = e.date || '?';
       if (e.date && e.date.length === 10) {
@@ -1555,7 +1555,7 @@
       el.textContent = '₩'+fmt(total);
     } else if (h||m) {
       el.className = 'work-entry-total';
-      el.textContent = h+'h'+(m?m+'m':'');
+      el.textContent = h+'시간'+(m?m+'분':'');
     } else {
       el.className = 'work-entry-total empty';
       el.textContent = '–';
@@ -1567,7 +1567,7 @@
     const filled = workEntriesTemp.filter(e => e.date && e.date.trim()).length;
     const totalMins = workEntriesTemp.reduce((s,e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
     if (filled === 0) { el.textContent = '입력 없음'; el.className = 'cal-count-label empty'; }
-    else { el.textContent = `${filled}일 · 총 ${Math.floor(totalMins/60)}h ${totalMins%60}m`; el.className = 'cal-count-label'; }
+    else { el.textContent = `${filled}일 · 총 ${Math.floor(totalMins/60)}시간 ${totalMins%60}분`; el.className = 'cal-count-label'; }
   }
 
   function updateTrigger(id) {
@@ -1604,9 +1604,9 @@
     if(mel) { mel.className='mobile-result '+resultClass; mel.textContent=totalWithHoliday>0?'₩ '+fmt(totalWithHoliday):'–'; }
     // 총 근무시간
     const hel = document.getElementById('hours-'+id);
-    if(hel) { hel.textContent=mins>0?Math.floor(mins/60)+'h '+mins%60+'m':'–'; hel.style.color=mins>0?'var(--text)':'var(--muted)'; }
+    if(hel) { hel.textContent=mins>0?Math.floor(mins/60)+'시간 '+mins%60+'분':'–'; hel.style.color=mins>0?'var(--text)':'var(--muted)'; }
     const mhel = document.getElementById('mhours-'+id);
-    if(mhel) { mhel.textContent=mins>0?Math.floor(mins/60)+'h '+mins%60+'m':'–'; mhel.style.color=mins>0?'var(--text)':'var(--muted)'; }
+    if(mhel) { mhel.textContent=mins>0?Math.floor(mins/60)+'시간 '+mins%60+'분':'–'; mhel.style.color=mins>0?'var(--text)':'var(--muted)'; }
     // 시급 표시
     const rateClass = rateHourly ? '' : 'none';
     const rateDisp = rateHourly ? '₩'+fmt(rateHourly)+'/h' : '–';
@@ -1682,7 +1682,7 @@
     const uniqueNames = new Set(rows.map(r=>r.name.trim()).filter(n=>n!==''));
     // 총 근무시간 (h m)
     const th = Math.floor(totalMins/60), tm = totalMins%60;
-    document.getElementById('totalHoursDisplay').textContent = tm > 0 ? th+'h '+tm+'m' : th+'h';
+    document.getElementById('totalHoursDisplay').textContent = tm > 0 ? th+'시간 '+tm+'분' : th+'시간';
     // 주휴시간 합산
     const totalHolidayMins = rows.reduce((s,r) => {
       if (!rateHourly || !r.workEntries || r.workEntries.length===0) return s;
@@ -1696,7 +1696,7 @@
       return s + wh;
     }, 0);
     const hh = Math.floor(totalHolidayMins/60), hm = totalHolidayMins%60;
-    document.getElementById('totalHolidayHoursDisplay').textContent = hm > 0 ? hh+'h '+hm+'m' : hh+'h';
+    document.getElementById('totalHolidayHoursDisplay').textContent = hm > 0 ? hh+'시간 '+hm+'분' : hh+'시간';
     // 근무일 (workEntries 날짜 중복 없이 합산)
     const allDates = new Set();
     rows.forEach(r => (r.workEntries||[]).forEach(e => { if(e.date) allDates.add(e.date); }));
