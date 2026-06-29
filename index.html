@@ -151,16 +151,15 @@
     .range-panel.show { display: block; }
     .range-panel-title { font-size: 0.75rem; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
     .range-panel-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .range-date-wrap { flex-wrap: nowrap; }
-    .range-date-wrap { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
-    .range-date-inp { background: #ffffff; border: 1.5px solid #c0c5d8; border-radius: 6px; padding: 7px 8px; font-family: inherit; font-size: 0.85rem; color: #1e2133; outline: none; flex: 1; min-width: 0; transition: border-color 0.2s; }
+    .range-date-wrap { display: flex; align-items: center; gap: 6px; flex: 1 1 100%; min-width: 0; flex-wrap: nowrap; }
+    .range-date-inp { background: #ffffff; border: 1.5px solid #c0c5d8; border-radius: 6px; padding: 7px 8px; font-family: inherit; font-size: 0.85rem; color: #1e2133; outline: none; flex: 1; min-width: 120px; transition: border-color 0.2s; }
     .range-date-inp:focus { border-color: var(--accent-light); box-shadow: 0 0 0 2px rgba(108,99,255,0.15); }
     .range-date-inp::-webkit-calendar-picker-indicator { opacity: 0.7; cursor: pointer; }
     .range-sep { color: var(--muted); font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
-    .range-time-wrap { display: flex; align-items: center; gap: 4px; background: #fff; border: 1.5px solid #c0c5d8; border-radius: 6px; padding: 5px 8px; flex-shrink: 0; }
-    .range-time-inp { background: transparent; border: none; color: #1e2133; font-family: inherit; font-size: 0.9rem; font-weight: 700; width: 36px; text-align: center; outline: none; }
+    .range-time-wrap { display: flex; align-items: center; gap: 2px; background: #fff; border: 1.5px solid #c0c5d8; border-radius: 6px; padding: 5px 7px; flex-shrink: 0; }
+    .range-time-inp { background: transparent; border: none; color: #1e2133; font-family: inherit; font-size: 0.88rem; font-weight: 700; width: 30px; text-align: center; outline: none; }
     .range-time-inp::placeholder { color: #aab0c8; }
-    .range-time-sep { color: #6b7194; font-size: 0.8rem; font-weight: 700; }
+    .range-time-sep { color: #6b7194; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
     .range-apply-btn { background: var(--green); border: none; color: #fff; font-family: inherit; font-size: 0.84rem; font-weight: 700; padding: 8px 14px; border-radius: 7px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s; }
     .range-apply-btn:hover { background: #138a5a; }
     .range-preview { font-size: 0.75rem; color: var(--green); margin-top: 8px; font-weight: 600; }
@@ -522,16 +521,16 @@
     <div class="range-panel" id="rangePanelWrap">
       <div class="range-panel-title">📅 날짜 범위로 일괄 추가</div>
       <div class="range-panel-row">
-        <div class="range-date-wrap">
+        <div class="range-date-wrap" style="flex-basis:100%;">
           <input type="date" class="range-date-inp" id="rangeStart" oninput="updateRangePreview()" />
           <span class="range-sep">~</span>
           <input type="date" class="range-date-inp" id="rangeEnd" oninput="updateRangePreview()" />
         </div>
         <div class="range-time-wrap">
           <input type="number" class="range-time-inp" id="rangeHours" min="0" max="23" placeholder="3" oninput="updateRangePreview()" />
-          <span class="range-time-sep">h</span>
+          <span class="range-time-sep">시간</span>
           <input type="number" class="range-time-inp" id="rangeMins" min="0" max="59" placeholder="0" oninput="updateRangePreview()" />
-          <span class="range-time-sep">m</span>
+          <span class="range-time-sep">분</span>
         </div>
         <button class="range-apply-btn" onclick="applyRangeEntries()">추가</button>
       </div>
@@ -1227,7 +1226,7 @@
         const dateInp = document.createElement('input');
         dateInp.type = 'date';
         dateInp.className = 'date-input-styled';
-        dateInp.style.cssText = 'flex:1.8;min-width:0;background:#fff;border:1.5px solid #b0b6d0;color:#1a1e30;';
+        dateInp.style.cssText = 'flex:1;min-width:120px;width:100%;background:#fff;border:1.5px solid #b0b6d0;color:#1a1e30;';
         dateInp.value = entry.date || '';
         if (week) {
           const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1245,23 +1244,25 @@
         // 시간 입력
         const timeWrap = document.createElement('div');
         timeWrap.className = 'work-time-wrap';
-        timeWrap.style.cssText = 'flex:1;min-width:0;background:#fff;border:1.5px solid #b0b6d0;';
+        timeWrap.style.cssText = 'flex:0 0 auto;background:#fff;border:1.5px solid #b0b6d0;padding:5px 6px;gap:2px;';
 
         const hInp = document.createElement('input');
         hInp.className = 'work-time-input';
         hInp.type = 'number'; hInp.min = 0; hInp.max = 23; hInp.placeholder = '0';
+        hInp.style.cssText = 'width:32px;font-size:0.88rem;';
         hInp.value = entry.hours !== '' ? entry.hours : '';
         hInp.oninput = () => { workEntriesTemp[origIdx].hours = parseInt(hInp.value,10)||0; updateEntryTotal(origIdx, totalEl); };
 
-        const sep = document.createElement('span'); sep.className = 'work-time-sep'; sep.textContent = 'h';
+        const sep = document.createElement('span'); sep.className = 'work-time-sep'; sep.textContent = '시간'; sep.style.cssText = 'font-size:0.72rem;white-space:nowrap;';
 
         const mInp = document.createElement('input');
         mInp.className = 'work-time-input';
         mInp.type = 'number'; mInp.min = 0; mInp.max = 59; mInp.placeholder = '0';
+        mInp.style.cssText = 'width:32px;font-size:0.88rem;';
         mInp.value = entry.mins !== '' ? entry.mins : '';
         mInp.oninput = () => { workEntriesTemp[origIdx].mins = parseInt(mInp.value,10)||0; updateEntryTotal(origIdx, totalEl); };
 
-        const sep2 = document.createElement('span'); sep2.className = 'work-time-sep'; sep2.textContent = 'm';
+        const sep2 = document.createElement('span'); sep2.className = 'work-time-sep'; sep2.textContent = '분'; sep2.style.cssText = 'font-size:0.72rem;';
         timeWrap.append(hInp, sep, mInp, sep2);
 
         // 소계
