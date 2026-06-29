@@ -1384,9 +1384,9 @@
     bar.innerHTML = '';
     const allowedIdx = getAllowedWeekIdx(weeks);
     weeks.forEach((w, i) => {
-      const hasData = workEntriesTemp.some(e => getWeekIdxForDate(e.date, weeks) === i && e.date);
+      const hasData = workEntriesTemp.some(e => (getWeekIdxForDate(e.date, weeks) === i || (_freeMode && e._weekHint === i)) && e.date);
       // 이 주차 근무시간 계산
-      const weekMins = workEntriesTemp.filter(e => getWeekIdxForDate(e.date, weeks) === i && e.date)
+      const weekMins = workEntriesTemp.filter(e => (getWeekIdxForDate(e.date, weeks) === i || (_freeMode && e._weekHint === i)) && e.date)
         .reduce((s,e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
       const weekH = weekMins / 60;
       const qualifies = weekH >= 15;
@@ -1445,10 +1445,16 @@
     secEl.textContent = secText;
     secEl.style.color = curQualifies && curWeekH > 0 ? 'var(--yellow)' : 'var(--muted)';
 
-    // 현재 주차에 해당하는 항목만 필터
+    // 현재 주차에 해당하는 항목만 필터 (자유모드일 때는 전체 표시)
     const weekEntries = workEntriesTemp
       .map((e, origIdx) => ({ ...e, origIdx }))
-      .filter(e => getWeekIdxForDate(e.date, weeks) === curWeekIdx || (!e.date && e._weekHint === curWeekIdx));
+      .filter(e => {
+        if (_freeMode) return true; // 자유모드: 모든 항목 표시
+        const dateWeekIdx = getWeekIdxForDate(e.date, weeks);
+        if (dateWeekIdx === curWeekIdx) return true;
+        if (!e.date && e._weekHint === curWeekIdx) return true;
+        return false;
+      });
 
     const list = document.getElementById('workEntryList');
     list.innerHTML = '';
@@ -1518,7 +1524,8 @@
             }
           }
           workEntriesTemp[origIdx].date = val;
-          delete workEntriesTemp[origIdx]._weekHint;
+          // 자유모드일 때는 _weekHint를 현재 탭으로 유지
+          if (_freeMode) { workEntriesTemp[origIdx]._weekHint = curWeekIdx; } else { delete workEntriesTemp[origIdx]._weekHint; }
           setDateLabel(val);
           updateCalFooter();
           renderWeekTabs(wk2);
@@ -1609,7 +1616,17 @@
   function calClearCurWeek() {
     const wk = getWeeksOfMonth(curYear, curMonth);
     const weekLabel = wk[curWeekIdx] ? wk[curWeekIdx].label : '해당 주차';
-    workEntriesTemp = workEntriesTemp.filter(e => getWeekIdxForDate(e.date, wk) !== curWeekIdx);
+    // 자유모드일 때는 전체 삭제, 아닐 때는 현재 주차만 삭제
+    if (_freeMode) {
+      workEntriesTemp = [];
+    } else {
+      workEntriesTemp = workEntriesTemp.filter(e => {
+        const dateWeekIdx = getWeekIdxForDate(e.date, wk);
+        if (dateWeekIdx === curWeekIdx) return false;
+        if (!e.date && e._weekHint === curWeekIdx) return false;
+        return true;
+      });
+    }
     // 임시 데이터뿐 아니라 실제 행 데이터에도 즉시 반영
     if (calActiveId !== null) {
       const row = rows.find(r => r.id === calActiveId);
@@ -1625,7 +1642,7 @@
     renderWeekTabs(wk);
     renderWorkEntriesForWeek(wk);
     updateCalFooter();
-    showToast('🗑 ' + weekLabel + ' 데이터가 삭제되었습니다');
+    showToast(_freeMode ? '🗑 전체 데이터가 삭제되었습니다' : '🗑 ' + weekLabel + ' 데이터가 삭제되었습니다');
   }
 
   function addWorkEntry() {
@@ -1749,7 +1766,7 @@
         workEntriesTemp[existing].hours = h;
         workEntriesTemp[existing].mins  = m;
       } else {
-        workEntriesTemp.push({ date: dateStr, hours: h, mins: m });
+        workEntriesTemp.push({ date: dateStr, hours: h, mins: m, ...(_freeMode ? { _weekHint: curWeekIdx } : {}) });
       }
       added++;
       cur.setDate(cur.getDate() + 1);
@@ -1801,6 +1818,9 @@
     const totalMins = workEntriesTemp.reduce((s,e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
     if (filled === 0) { el.textContent = '입력 없음'; el.className = 'cal-count-label empty'; }
     else { el.textContent = `${filled}일 · 총 ${Math.floor(totalMins/60)}시간 ${totalMins%60}분`; el.className = 'cal-count-label'; }
+    // 자유모드일 때 삭제 버튼 텍스트 변경
+    const clearBtn = document.querySelector('.cal-btn-clear');
+    if (clearBtn) clearBtn.textContent = _freeMode ? '전체 삭제' : '삭제';
   }
 
   function updateTrigger(id) {
