@@ -674,7 +674,10 @@
   <div class="cal-popup">
     <div class="cal-popup-header">
       <div class="cal-popup-title" id="calPopupTitle">근무 일정 입력</div>
-      <button class="cal-nav-btn" onclick="calClose()" title="닫기">✕</button>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <button id="freeModeBtn" onclick="toggleFreeMode()" title="자유 날짜 입력 모드 (주차 제한 해제)" style="display:none;font-family:inherit;font-size:0.78rem;font-weight:700;padding:5px 10px;border-radius:7px;border:1.5px solid rgba(108,99,255,0.35);background:rgba(108,99,255,0.08);color:var(--accent-light);cursor:pointer;transition:all 0.15s;white-space:nowrap;">🔓 자유 입력</button>
+        <button class="cal-nav-btn" onclick="calClose()" title="닫기">✕</button>
+      </div>
     </div>
     <div class="week-tab-bar" id="weekTabBar"></div>
     <div class="week-section-label" id="weekSectionLabel"></div>
@@ -1243,6 +1246,28 @@
   let calActiveId = null;
   let workEntriesTemp = [];
   let curWeekIdx = 0; // 현재 선택된 주차 인덱스
+  let _freeMode = false; // 주차 제한 해제 모드
+
+  function toggleFreeMode() {
+    _freeMode = !_freeMode;
+    const btn = document.getElementById('freeModeBtn');
+    if (_freeMode) {
+      btn.textContent = '🔒 주차 제한';
+      btn.style.background = 'rgba(224,62,62,0.10)';
+      btn.style.borderColor = 'rgba(224,62,62,0.4)';
+      btn.style.color = 'var(--danger)';
+      showToast('🔓 자유 입력 모드: 모든 주차에 자유롭게 날짜를 지정할 수 있습니다');
+    } else {
+      btn.textContent = '🔓 자유 입력';
+      btn.style.background = 'rgba(108,99,255,0.08)';
+      btn.style.borderColor = 'rgba(108,99,255,0.35)';
+      btn.style.color = 'var(--accent-light)';
+      showToast('🔒 주차 제한 모드로 전환되었습니다');
+    }
+    const wk = getWeeksOfMonth(curYear, curMonth);
+    renderWeekTabs(wk);
+    renderWorkEntriesForWeek(wk);
+  }
 
   function getWeeksOfMonth(year, month) {
     const weeks = [];
@@ -1290,6 +1315,7 @@
 
   function openCalPopup(id) {
     calActiveId = id;
+    _freeMode = false; // 팝업 열 때마다 자유 입력 모드 초기화
     const row = rows.find(r=>r.id===id);
     workEntriesTemp = JSON.parse(JSON.stringify(row.workEntries||[]));
 
@@ -1306,6 +1332,18 @@
       for (let i = 0; i < weeks.length; i++) { if (weeks[i].label === `${n}주차`) return i; }
       return -1;
     })();
+
+    // 자유 입력 버튼: N주차 이름일 때만 표시
+    const freeModeBtn = document.getElementById('freeModeBtn');
+    if (_allowedIdx >= 0) {
+      freeModeBtn.style.display = 'inline-flex';
+      freeModeBtn.textContent = '🔓 자유 입력';
+      freeModeBtn.style.background = 'rgba(108,99,255,0.08)';
+      freeModeBtn.style.borderColor = 'rgba(108,99,255,0.35)';
+      freeModeBtn.style.color = 'var(--accent-light)';
+    } else {
+      freeModeBtn.style.display = 'none';
+    }
 
     // 현재 주차 선택: 허용된 주차가 있으면 그것 우선, 아니면 데이터 있는 첫 주차, 없으면 0
     if (_allowedIdx >= 0) {
@@ -1331,6 +1369,7 @@
 
   // 현재 열려있는 행의 이름이 "N주차" 패턴인지 확인하고, 허용 주차 인덱스 반환 (-1이면 제한 없음)
   function getAllowedWeekIdx(weeks) {
+    if (_freeMode) return -1; // 자유 입력 모드면 항상 제한 없음
     if (calActiveId === null) return -1;
     const row = rows.find(r => r.id === calActiveId);
     if (!row || !row.name) return -1;
@@ -1377,7 +1416,7 @@
         // 범위 패널이 열려있으면 날짜 범위 갱신
         if (_rangePanelOpen) {
           const wCur = wk[curWeekIdx];
-          if (wCur) {
+          if (wCur && !_freeMode) {
             const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             const minVal = pad(wCur.start);
             const maxVal = pad(wCur.end);
@@ -1456,7 +1495,7 @@
         dateInp.style.cssText = 'flex:1;min-width:120px;width:100%;background:#fff;border:1.5px solid #b0b6d0;color:#1a1e30;';
         dateInp.value = entry.date || '';
         const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        if (week) {
+        if (!_freeMode && week) {
           dateInp.min = pad(week.start);
           dateInp.max = pad(week.end);
         }
@@ -1465,8 +1504,8 @@
           if (!val) return;
           const wk2 = getWeeksOfMonth(curYear, curMonth);
           const w = wk2[curWeekIdx];
-          // 선택된 주차 범위 밖이면 강제로 해당 주차 첫날로 되돌림 (모바일 포함)
-          if (w) {
+          // 선택된 주차 범위 밖이면 강제로 해당 주차 첫날로 되돌림 (모바일 포함) — 자유 입력 모드일 때는 스킵
+          if (!_freeMode && w) {
             const minStr = pad(w.start);
             const maxStr = pad(w.end);
             if (val < minStr || val > maxStr) {
@@ -1552,6 +1591,7 @@
         calcTotal();
       }
     }
+    _freeMode = false;
     document.getElementById('calPopupOverlay').classList.remove('show');
     calActiveId = null;
   }
@@ -1598,15 +1638,23 @@
     panel.classList.toggle('show', _rangePanelOpen);
     btn.style.background = _rangePanelOpen ? 'rgba(23,158,104,0.12)' : '';
     if (_rangePanelOpen) {
-      // 현재 주차 범위로 기본값 + min/max 제한
+      // 현재 주차 범위로 기본값 + min/max 제한 (자유 입력 모드면 월 전체 범위)
       const wk = getWeeksOfMonth(curYear, curMonth);
       const w = wk[curWeekIdx];
-      if (w) {
-        const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const startInp = document.getElementById('rangeStart');
+      const endInp   = document.getElementById('rangeEnd');
+      if (_freeMode) {
+        // 자유 입력 모드: 해당 월 전체 범위로 설정, min/max 제한 없음
+        const monthStart = new Date(curYear, curMonth - 1, 1, 12, 0, 0);
+        const monthEnd   = new Date(curYear, curMonth, 0, 12, 0, 0);
+        startInp.min = pad(monthStart); startInp.max = pad(monthEnd);
+        endInp.min   = pad(monthStart); endInp.max   = pad(monthEnd);
+        startInp.value = pad(monthStart);
+        endInp.value   = pad(monthEnd);
+      } else if (w) {
         const minVal = pad(w.start);
         const maxVal = pad(w.end);
-        const startInp = document.getElementById('rangeStart');
-        const endInp   = document.getElementById('rangeEnd');
         startInp.min = minVal; startInp.max = maxVal;
         endInp.min   = minVal; endInp.max   = maxVal;
         startInp.value = minVal;
@@ -1632,7 +1680,7 @@
     if (s > e) { preview.textContent = '⚠️ 시작일이 종료일보다 늦습니다'; preview.style.color = 'var(--danger)'; return; }
     const wk = getWeeksOfMonth(curYear, curMonth);
     const w = wk[curWeekIdx];
-    if (w && (s < w.start || e > w.end)) {
+    if (!_freeMode && w && (s < w.start || e > w.end)) {
       preview.textContent = `⚠️ ${w.label} 범위(${w.range})를 벗어납니다`;
       preview.style.color = 'var(--danger)'; return;
     }
@@ -1675,8 +1723,8 @@
     let added = 0, skipped = 0;
     while (cur <= e) {
       const dateStr = `${cur.getFullYear()}-${pad2(cur.getMonth()+1)}-${pad2(cur.getDate())}`;
-      // 현재 주차 범위 밖이면 스킵 (모바일에서 min/max 무시해도 안전)
-      if (minStr && maxStr && (dateStr < minStr || dateStr > maxStr)) {
+      // 자유 입력 모드가 아닐 때만 현재 주차 범위 밖 스킵
+      if (!_freeMode && minStr && maxStr && (dateStr < minStr || dateStr > maxStr)) {
         cur.setDate(cur.getDate() + 1);
         skipped++;
         continue;
@@ -1692,7 +1740,7 @@
       cur.setDate(cur.getDate() + 1);
     }
     if (added === 0) {
-      showToast(`⚠️ ${w ? w.label+'('+w.range+') ' : ''}범위 안에 추가할 날짜가 없습니다`);
+      showToast(`⚠️ ${!_freeMode && w ? w.label+'('+w.range+') ' : ''}범위 안에 추가할 날짜가 없습니다`);
       return;
     }
     // 패널 닫기
