@@ -1608,10 +1608,24 @@
 
   function calClearCurWeek() {
     const wk = getWeeksOfMonth(curYear, curMonth);
+    const weekLabel = wk[curWeekIdx] ? wk[curWeekIdx].label : '해당 주차';
     workEntriesTemp = workEntriesTemp.filter(e => getWeekIdxForDate(e.date, wk) !== curWeekIdx);
+    // 임시 데이터뿐 아니라 실제 행 데이터에도 즉시 반영
+    if (calActiveId !== null) {
+      const row = rows.find(r => r.id === calActiveId);
+      if (row) {
+        row.workEntries = workEntriesTemp.filter(e => e.date && e.date.trim()).map(e => {
+          const { _weekHint, origIdx, ...rest } = e; return rest;
+        });
+        updateTrigger(calActiveId);
+        updateResultCell(calActiveId);
+        calcTotal();
+      }
+    }
     renderWeekTabs(wk);
     renderWorkEntriesForWeek(wk);
     updateCalFooter();
+    showToast('🗑 ' + weekLabel + ' 데이터가 삭제되었습니다');
   }
 
   function addWorkEntry() {
