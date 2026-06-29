@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>알바 월급 계산기</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f4f6fb; --surface: #ffffff; --surface2: #eef0f7;
+      --border: #dde1ee; --accent: #6c63ff; --accent-light: #5a52e0;
+      --green: #179e68; --text: #1e2133; --muted: #8a8fa8;
+      --danger: #e03e3e; --yellow: #b38a00;
+      --weekend: #c0550a;
+      --radius: 10px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; padding: 40px 16px 80px; }
+
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header h1 span { color: var(--accent-light); }
+    header p { color: var(--muted); margin-top: 6px; font-size: 0.92rem; }
+
+    /* ── 센터 탭 바 ── */
+    .center-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; }
+    .center-tab { display: flex; align-items: center; gap: 4px; padding: 7px 14px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit; }
+    .center-tab:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.05); }
+    .center-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .center-tab .center-tab-del { background: none; border: none; color: inherit; font-size: 0.8rem; opacity: 0.6; cursor: pointer; padding: 0 0 0 4px; line-height: 1; transition: opacity 0.15s; }
+    .center-tab .center-tab-del:hover { opacity: 1; }
+    .center-add-btn { display: flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 9px; border: 1px dashed var(--border); background: transparent; color: var(--muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
+    .center-add-btn:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.05); }
+    /* 센터 이름 편집 모달 */
+    .center-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 3000; align-items: center; justify-content: center; }
+    .center-modal-overlay.show { display: flex; }
+    .center-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 28px 24px; max-width: 320px; width: 90%; }
+    .center-modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+    .center-modal-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-family: inherit; font-size: 0.95rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+    .center-modal-input:focus { border-color: var(--accent-light); }
+    .center-modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+    .center-modal-btns button { flex: 1; padding: 10px; border-radius: 8px; font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; }
+    .center-modal-btns .btn-cancel { background: var(--surface2); color: var(--muted); }
+    .center-modal-btns .btn-confirm { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .center-modal-btns .btn-confirm:hover { background: var(--accent-light); }
+    .month-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; }
+    .month-nav { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 6px 10px; }
+    .month-nav-btn { background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--muted); padding: 0 4px; line-height: 1; transition: color 0.15s; }
+    .month-nav-btn:hover { color: var(--accent-light); }
+    .month-nav-label { font-size: 0.95rem; font-weight: 700; color: var(--text); min-width: 90px; text-align: center; }
+    .month-saved-list { display: flex; gap: 6px; flex-wrap: wrap; }
+    .month-chip { font-size: 0.78rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .month-chip:hover { border-color: var(--accent-light); color: var(--accent-light); }
+    .month-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .month-chip.has-data { border-color: rgba(108,99,255,0.4); color: var(--accent-light); background: rgba(108,99,255,0.07); }
+
+    .top-bar { max-width: 980px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .top-bar-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+    .toolbar { display: none; }
+    .btn-tool { display: flex; align-items: center; gap: 6px; font-family: inherit; font-size: 0.84rem; font-weight: 600; padding: 8px 16px; border-radius: 7px; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; }
+    .btn-tool.save  { background: rgba(108,99,255,0.10); color: var(--accent-light); border-color: rgba(108,99,255,0.3); }
+    .btn-tool.save:hover { background: rgba(108,99,255,0.2); }
+    .btn-tool.excel { background: rgba(23,158,104,0.10); color: var(--green); border-color: rgba(23,158,104,0.3); }
+    .btn-tool.excel:hover { background: rgba(23,158,104,0.2); }
+    .btn-tool.reset { background: rgba(224,62,62,0.07); color: var(--danger); border-color: rgba(224,62,62,0.25); }
+    .btn-tool.reset:hover { background: rgba(224,62,62,0.15); }
+
+    .save-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e2133; border: 1px solid #333; color: #fff; font-size: 0.88rem; padding: 10px 20px; border-radius: 30px; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; white-space: nowrap; z-index: 999; }
+    .save-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* 시급 패널 (단일 시급) */
+    .rate-panel { max-width: 980px; margin: 0 auto 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: nowrap; }
+    .rate-panel .panel-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .rate-group { display: flex; align-items: center; gap: 8px; }
+    .rate-label { font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+    .rate-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-right: 4px; vertical-align: middle; }
+    .rate-badge.hourly { background: rgba(108,99,255,0.12); color: var(--accent-light); }
+    .rate-input-wrap { display: flex; align-items: center; gap: 3px; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 5px 10px; transition: border-color 0.2s; }
+    .rate-input-wrap:focus-within { border-color: var(--accent-light); }
+    .rate-input-wrap span { color: var(--muted); font-size: 0.82rem; }
+    .rate-input { background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 0.9rem; font-weight: 600; width: 90px; text-align: right; outline: none; }
+    .rate-input::placeholder { color: var(--muted); font-weight: 400; }
+    .rate-unit { font-size: 0.75rem; color: var(--muted); margin-left: 2px; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; max-width: 980px; margin: 0 auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: var(--surface2); padding: 12px 14px; font-size: 0.77rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(108,99,255,0.03); }
+    td { padding: 11px 10px; vertical-align: middle; text-align: center; }
+
+    .input-name { background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 0.95rem; padding: 4px 0; width: 100%; outline: none; transition: border-color 0.2s; text-align: center; }
+    .input-name:focus { border-color: var(--accent-light); }
+    .input-name::placeholder { color: var(--muted); }
+    .input-name.dup { border-color: var(--yellow); color: var(--yellow); }
+    .mobile-name-input.dup { border-color: var(--yellow); color: var(--yellow); }
+
+    /* 근무 입력 트리거 */
+    .edu-cell { display: flex; align-items: center; justify-content: center; }
+    .edu-trigger { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface2); transition: border-color 0.15s, background 0.15s; min-width: 140px; justify-content: space-between; }
+    .edu-trigger:hover { border-color: var(--accent-light); background: rgba(108,99,255,0.06); }
+    .edu-trigger-inner { display: flex; flex-direction: column; gap: 2px; }
+    .edu-trigger-text { font-size: 0.82rem; color: var(--muted); }
+    .edu-trigger-text.has-days { color: var(--accent-light); font-weight: 700; }
+    .edu-trigger-dates { font-size: 0.72rem; color: var(--muted); line-height: 1.3; word-break: break-all; }
+    .edu-trigger-icon { font-size: 0.85rem; opacity: .5; flex-shrink: 0; }
+
+    /* 근무 입력 팝업 */
+    .cal-popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 2000; align-items: center; justify-content: center; }
+    .cal-popup-overlay.show { display: flex; }
+    .cal-popup { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: min(420px, 96vw); box-shadow: 0 12px 40px rgba(0,0,0,0.18); max-height: 92vh; overflow-y: auto; }
+    .cal-popup-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .cal-popup-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .cal-popup-title span { color: var(--accent-light); }
+    .cal-nav-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 0.95rem; width: 30px; height: 30px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+    .cal-nav-btn:hover { background: rgba(108,99,255,0.1); border-color: var(--accent-light); }
+
+    /* 날짜+시간 입력 그리드 */
+    .work-entry-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 55vh; overflow-y: auto; padding-right: 4px; }
+    .work-entry-row { display: grid; grid-template-columns: auto 1fr 1fr auto; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+    .work-entry-date { font-size: 0.88rem; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 50px; }
+    .work-entry-date.sun { color: #e04040; }
+    .work-entry-date.sat { color: var(--accent-light); }
+    .work-time-wrap { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; transition: border-color 0.2s; }
+    .work-time-wrap:focus-within { border-color: var(--accent-light); }
+    .work-time-input { background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 0.88rem; font-weight: 600; width: 36px; text-align: center; outline: none; }
+    .work-time-input::placeholder { color: var(--muted); font-weight: 400; }
+    .work-time-sep { color: var(--muted); font-size: 0.8rem; }
+    .work-time-label { font-size: 0.72rem; color: var(--muted); }
+    .work-entry-total { font-size: 0.8rem; font-weight: 700; color: var(--accent-light); white-space: nowrap; text-align: right; min-width: 42px; }
+    .work-entry-total.empty { color: var(--muted); font-weight: 400; }
+
+    .work-add-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.84rem; padding: 7px 12px; border-radius: 7px; cursor: pointer; transition: all 0.15s; margin-bottom: 14px; }
+    .work-add-btn:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.04); }
+
+    .cal-popup-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .cal-count-label { font-size: 0.82rem; color: var(--accent-light); font-weight: 700; }
+    .cal-count-label.empty { color: var(--muted); font-weight: 400; }
+    .cal-footer-btns { display: flex; gap: 8px; }
+    .cal-btn-clear { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.8rem; padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+    .cal-btn-clear:hover { color: var(--danger); border-color: rgba(224,62,62,0.4); }
+    .cal-btn-done { background: var(--accent); border: none; color: #fff; font-family: inherit; font-size: 0.8rem; font-weight: 700; padding: 5px 14px; border-radius: 7px; cursor: pointer; }
+    .cal-btn-done:hover { background: var(--accent-light); }
+
+    .applied-rate { font-size: 0.85rem; white-space: nowrap; text-align: center; font-weight: 600; color: var(--accent-light); }
+    .applied-rate.none { color: var(--muted); }
+
+    .result-cell { font-weight: 700; font-size: 0.98rem; color: var(--muted); white-space: nowrap; text-align: center; }
+    .result-cell.has-val { color: var(--green); }
+
+    .btn-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; transition: color 0.15s, background 0.15s; }
+    .btn-del:hover { color: var(--danger); background: rgba(224,62,62,0.08); }
+
+    .add-row-wrap { padding: 13px 14px; border-top: 1px solid var(--border); }
+    .btn-add { background: none; border: 1px dashed var(--border); color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.88rem; padding: 7px 14px; border-radius: 6px; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+    .btn-add:hover { border-color: var(--accent); color: var(--accent-light); background: rgba(108,99,255,0.05); }
+
+    .summary { background: linear-gradient(135deg, rgba(23,158,104,0.08) 0%, rgba(23,158,104,0.04) 100%); border: 1px solid rgba(23,158,104,0.25); border-radius: var(--radius); max-width: 980px; margin: 16px auto 0; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .summary-left .label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); font-weight: 600; opacity: 0.7; }
+    .summary-left .sub { font-size: 0.88rem; color: var(--muted); margin-top: 4px; }
+    .summary-left .sub span { color: var(--text); font-weight: 600; }
+    .total-amount { font-size: 2rem; font-weight: 700; color: var(--green); letter-spacing: -1px; }
+    .total-amount sup { font-size: 1rem; font-weight: 600; margin-right: 3px; vertical-align: super; }
+
+    /* ── 세금 패널 ── */
+    .tax-section-label {
+      max-width: 980px; margin: 18px auto 10px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .tax-section-label .tsl-line { flex: 1; height: 1px; background: var(--border); }
+    .tax-section-label .tsl-text {
+      font-size: 0.73rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--muted); white-space: nowrap;
+    }
+
+    .tax-panel { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .tax-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+    .tax-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .tax-badge { font-size: 0.69rem; font-weight: 700; padding: 3px 9px; border-radius: 5px; white-space: nowrap; letter-spacing: 0.02em; }
+    .tax-badge.freelance { background: rgba(90,82,224,0.12); color: var(--accent-light); }
+    .tax-badge.insured   { background: rgba(23,158,104,0.12); color: var(--green); }
+    .tax-card-title { font-size: 0.83rem; color: var(--text); font-weight: 600; }
+    .tax-card-sub   { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+    .tax-net-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .tax-net-label { font-size: 0.78rem; color: var(--muted); }
+    .tax-net-amount { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.5px; }
+    .tax-net-amount.freelance { color: var(--accent-light); }
+    .tax-net-amount.insured   { color: var(--green); }
+    .tax-net-amount sup { font-size: 0.85rem; font-weight: 600; margin-right: 2px; vertical-align: super; }
+    .tax-rows { display: flex; flex-direction: column; gap: 5px; }
+    .tax-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; }
+    .tax-row .t-label { color: var(--muted); }
+    .tax-row .t-val   { font-weight: 600; color: var(--text); }
+    .tax-row .t-val.minus { color: var(--danger); }
+    .tax-row .t-val.base  { color: var(--muted); font-weight: 400; }
+    .tax-divider { border: none; border-top: 1px dashed var(--border); margin: 5px 0; }
+    .tax-tooltip {
+      max-width: 980px; margin: 10px auto 0;
+      background: rgba(108,99,255,0.05); border: 1px solid rgba(108,99,255,0.15);
+      border-radius: 8px; padding: 10px 16px;
+      font-size: 0.76rem; color: var(--muted); line-height: 1.7;
+    }
+    .tax-tooltip strong { color: var(--text); }
+
+    @media (max-width: 520px) {
+      .tax-panel { grid-template-columns: 1fr; }
+    }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 32px; max-width: 340px; width: 90%; text-align: center; }
+    .modal h3 { font-size: 1.1rem; margin-bottom: 10px; }
+    .modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; line-height: 1.6; }
+    .modal-btns { display: flex; gap: 10px; justify-content: center; }
+    .modal-btns button { flex: 1; padding: 10px; border-radius: 8px; font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; }
+    .modal-btns .btn-cancel { background: var(--surface2); color: var(--muted); }
+    .modal-btns .btn-cancel:hover { color: var(--text); }
+    .modal-btns .btn-confirm { background: rgba(224,62,62,0.1); color: var(--danger); border-color: rgba(224,62,62,0.25); }
+    .modal-btns .btn-confirm:hover { background: rgba(224,62,62,0.2); }
+
+    /* 모바일 카드 */
+    .mobile-list { display: none; max-width: 980px; margin: 0 auto; }
+    .mobile-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+    .mobile-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .mobile-name-input { background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 1rem; font-weight: 600; padding: 4px 0; outline: none; flex: 1; margin-right: 12px; transition: border-color 0.2s; }
+    .mobile-name-input:focus { border-color: var(--accent-light); }
+    .mobile-name-input::placeholder { color: var(--muted); font-weight: 400; }
+    .mobile-card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+    .mobile-field label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+    .mobile-plta-row { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .mobile-plta-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .mobile-plta-rate-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .mobile-result { font-size: 1.05rem; font-weight: 700; color: var(--muted); }
+    .mobile-result.has-val { color: var(--green); }
+    .mobile-rate { font-size: 0.85rem; font-weight: 600; color: var(--accent-light); }
+    .mobile-rate.none { color: var(--muted); }
+    .mobile-add-btn { width: 100%; background: none; border: 1px dashed var(--border); color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.88rem; padding: 12px; border-radius: var(--radius); transition: all 0.15s; margin-top: 4px; }
+    .mobile-add-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+    @media (max-width: 680px) {
+      body { padding: 24px 12px 80px; }
+      header h1 { font-size: 1.5rem; }
+      .card { display: none; }
+      .mobile-list { display: block; }
+      .rate-panel { gap: 14px; padding: 14px 16px; flex-direction: column; align-items: flex-start; }
+      .btn-tool { flex: 1; justify-content: center; font-size: 0.8rem; padding: 8px 10px; }
+      .top-bar { flex-wrap: wrap; gap: 8px; }
+      .top-bar-right { width: 100%; align-items: flex-end; }
+      .toolbar-btn-row { width: 100%; }
+    }
+    .toolbar-user-row { display: flex; align-items: center; gap: 8px; }
+    .toolbar-btn-row { display: flex; gap: 8px; align-items: center; }
+
+    /* ── 로그인 화면 ── */
+    .login-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9999; align-items: center; justify-content: center; }
+    .login-screen.show { display: flex; }
+    .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px 36px 32px; width: min(380px, 92vw); box-shadow: 0 12px 40px rgba(0,0,0,0.10); }
+    .login-logo { text-align: center; font-size: 1.8rem; font-weight: 700; margin-bottom: 6px; }
+    .login-logo span { color: var(--accent-light); }
+    .login-sub { text-align: center; font-size: 0.85rem; color: var(--muted); margin-bottom: 28px; }
+    .login-field { margin-bottom: 14px; }
+    .login-field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .login-field input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; font-family: inherit; font-size: 0.95rem; color: var(--text); outline: none; transition: border-color 0.2s; }
+    .login-field input:focus { border-color: var(--accent-light); }
+    .pw-wrap { position: relative; }
+    .pw-wrap input { padding-right: 42px; }
+    .pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1.1rem; padding: 2px; line-height: 1; transition: color 0.15s; }
+    .pw-toggle:hover { color: var(--accent-light); }
+    .login-btn { width: 100%; background: var(--accent); border: none; color: #fff; font-family: inherit; font-size: 0.95rem; font-weight: 700; padding: 12px; border-radius: 8px; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+    .login-btn:hover { background: var(--accent-light); }
+    .login-error { color: var(--danger); font-size: 0.82rem; text-align: center; margin-top: 10px; min-height: 18px; }
+    .logout-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.78rem; padding: 5px 12px; border-radius: 7px; cursor: pointer; transition: all 0.15s; }
+    .logout-btn:hover { color: var(--danger); border-color: rgba(224,62,62,0.4); }
+    .login-user-badge { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); }
+    .login-user-badge strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-screen show" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">⏰ 알바 <span>월급 계산기</span></div>
+    <div class="login-sub">아이디와 비밀번호를 입력하세요</div>
+    <div class="login-field">
+      <label>아이디</label>
+      <input type="text" id="loginId" placeholder="아이디 입력" autocomplete="username" />
+    </div>
+    <div class="login-field">
+      <label>비밀번호</label>
+      <div class="pw-wrap">
+        <input type="password" id="loginPw" placeholder="비밀번호 입력" autocomplete="current-password" />
+        <button type="button" class="pw-toggle" onclick="togglePw()" id="pwToggle" title="비밀번호 표시/숨기기">👁</button>
+      </div>
+    </div>
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<header>
+  <h1>⏰ 알바 <span>월급 계산기</span></h1>
+  <p>시급을 설정하고 해당 날짜와 근무 시간을 입력하세요</p>
+</header>
+
+<!-- 센터 탭 바 -->
+<div class="top-bar">
+  <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;">
+    <div class="center-bar" id="centerBar"></div>
+    <div class="month-bar">
+      <div class="month-nav">
+        <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="month-nav-label" id="monthLabel"></div>
+        <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="month-saved-list" id="monthChips"></div>
+    </div>
+  </div>
+  <div class="top-bar-right">
+    <div class="toolbar-user-row">
+      <div class="login-user-badge">
+        <span>👤 <strong id="loggedInUser"></strong></span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    </div>
+    <div class="toolbar-btn-row">
+      <button class="btn-tool save"  onclick="saveData()">💾 저장</button>
+      <button class="btn-tool excel" onclick="exportExcel()">📊 엑셀 내보내기</button>
+      <button class="btn-tool reset" onclick="openResetModal()">🗑 초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- 시급 설정 패널 -->
+<div class="rate-panel">
+  <div class="panel-title">시급 설정</div>
+  <div class="rate-group">
+    <div class="rate-label"><span class="rate-badge hourly">시급</span></div>
+    <div class="rate-input-wrap">
+      <span>₩</span>
+      <input class="rate-input" id="rateHourly" type="text" inputmode="numeric" placeholder="0" oninput="onRateInput(this.value)" />
+      <span class="rate-unit">/ 시간</span>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:12%">이름</th>
+        <th style="width:42%">근무 날짜 &amp; 시간 <span style="font-weight:400;opacity:.5;font-size:0.72rem">(클릭하여 입력)</span></th>
+        <th style="width:14%">총 근무시간</th>
+        <th style="width:14%">적용 시급</th>
+        <th style="width:13%">최종 금액</th>
+        <th style="width:5%"></th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <div class="add-row-wrap">
+    <button class="btn-add" onclick="addRow()">＋ 직원 추가</button>
+  </div>
+</div>
+
+<div class="mobile-list" id="mobileList"></div>
+<button class="mobile-add-btn" id="mobileAddBtn" style="display:none;max-width:980px;margin:0 auto;" onclick="addRow()">＋ 직원 추가</button>
+
+<div class="summary">
+  <div class="summary-left">
+    <div class="label">총 합계</div>
+    <div class="sub">직원 <span id="empCount">0</span>명 · 총 근무 <span id="totalHoursDisplay">0</span>시간</div>
+  </div>
+  <div class="total-amount"><sup>₩</sup><span id="totalDisplay">0</span></div>
+</div>
+
+<!-- 세금 섹션 구분선 -->
+<div class="tax-section-label">
+  <div class="tsl-line"></div>
+  <div class="tsl-text">💡 세금 시뮬레이션 (2026년 기준)</div>
+  <div class="tsl-line"></div>
+</div>
+
+<!-- 세금 패널 -->
+<div class="tax-panel">
+  <!-- 프리랜서 카드 -->
+  <div class="tax-card">
+    <div class="tax-card-header">
+      <span class="tax-badge freelance">프리랜서</span>
+      <div>
+        <div class="tax-card-title">3.3% 원천징수</div>
+        <div class="tax-card-sub">소득세 3% + 지방소득세 0.3%</div>
+      </div>
+    </div>
+    <div class="tax-net-row">
+      <span class="tax-net-label">실수령액 (예상)</span>
+      <span class="tax-net-amount freelance"><sup>₩</sup><span id="fl-net">0</span></span>
+    </div>
+    <div class="tax-rows">
+      <div class="tax-row"><span class="t-label">총 지급액</span><span class="t-val base" id="fl-gross">₩0</span></div>
+      <div class="tax-row"><span class="t-label">소득세 (3%)</span><span class="t-val minus" id="fl-income">-₩0</span></div>
+      <div class="tax-row"><span class="t-label">지방소득세 (0.3%)</span><span class="t-val minus" id="fl-local">-₩0</span></div>
+      <hr class="tax-divider"/>
+      <div class="tax-row"><span class="t-label">원천징수 합계</span><span class="t-val minus" id="fl-total-tax">-₩0</span></div>
+    </div>
+  </div>
+  <!-- 4대보험 카드 -->
+  <div class="tax-card">
+    <div class="tax-card-header">
+      <span class="tax-badge insured">4대보험</span>
+      <div>
+        <div class="tax-card-title">직원 부담분 공제</div>
+        <div class="tax-card-sub">국민연금·건강·고용·요양보험</div>
+      </div>
+    </div>
+    <div class="tax-net-row">
+      <span class="tax-net-label">실수령액 (예상)</span>
+      <span class="tax-net-amount insured"><sup>₩</sup><span id="ins-net">0</span></span>
+    </div>
+    <div class="tax-rows">
+      <div class="tax-row"><span class="t-label">총 지급액</span><span class="t-val base" id="ins-gross">₩0</span></div>
+      <div class="tax-row"><span class="t-label">국민연금 (4.5%)</span><span class="t-val minus" id="ins-pension">-₩0</span></div>
+      <div class="tax-row"><span class="t-label">건강보험 (3.545%)</span><span class="t-val minus" id="ins-health">-₩0</span></div>
+      <div class="tax-row"><span class="t-label">장기요양보험 (0.4591%)</span><span class="t-val minus" id="ins-ltc">-₩0</span></div>
+      <div class="tax-row"><span class="t-label">고용보험 (0.9%)</span><span class="t-val minus" id="ins-emp">-₩0</span></div>
+      <hr class="tax-divider"/>
+      <div class="tax-row"><span class="t-label">4대보험 합계</span><span class="t-val minus" id="ins-total">-₩0</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- 안내 문구 -->
+<div class="tax-tooltip">
+  <strong>📌 참고사항</strong> · 프리랜서(3.3%)는 사업소득 원천징수율이며, 연말정산 또는 종합소득세 신고 시 환급될 수 있습니다.
+  · 4대보험 요율은 <strong>2026년 기준 직원 부담분</strong>으로, 실제 월 보수액·취득일·소득월액에 따라 달라질 수 있습니다.
+  · 소득세(근로소득세)는 별도이며 간이세액표 적용 시 추가 공제됩니다.
+</div>
+
+<!-- 센터 이름 편집 모달 -->
+<div class="center-modal-overlay" id="centerModalOverlay">
+  <div class="center-modal">
+    <h3 id="centerModalTitle">센터 추가</h3>
+    <input class="center-modal-input" id="centerModalInput" type="text" placeholder="센터 이름 입력" maxlength="20" />
+    <div class="center-modal-btns">
+      <button class="btn-cancel" onclick="closeCenterModal()">취소</button>
+      <button class="btn-confirm" id="centerModalConfirm" onclick="confirmCenterModal()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 근무 입력 팝업 -->
+<div class="cal-popup-overlay" id="calPopupOverlay" onclick="calOverlayClick(event)">
+  <div class="cal-popup">
+    <div class="cal-popup-header">
+      <div class="cal-popup-title" id="calPopupTitle">근무 일정 입력</div>
+      <button class="cal-nav-btn" onclick="calClose()" title="닫기">✕</button>
+    </div>
+    <div class="work-entry-list" id="workEntryList"></div>
+    <button class="work-add-btn" onclick="addWorkEntry()">＋ 날짜 추가</button>
+    <div class="cal-popup-footer">
+      <span class="cal-count-label" id="calPopupCount">입력 없음</span>
+      <div class="cal-footer-btns">
+        <button class="cal-btn-clear" onclick="calClearAll()">전체 삭제</button>
+        <button class="cal-btn-done" onclick="calClose()">완료</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="save-toast" id="toast"></div>
+
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>⚠️ 초기화 확인</h3>
+    <p>모든 직원 데이터와 시급 설정이<br>삭제됩니다. 계속하시겠습니까?</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeResetModal()">취소</button>
+      <button class="btn-confirm" onclick="confirmReset()">초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- 센터 삭제 확인 모달 -->
+<div class="modal-overlay" id="centerDeleteModal">
+  <div class="modal">
+    <h3>⚠️ 센터 삭제</h3>
+    <p><strong id="centerDeleteName"></strong> 센터의<br>모든 데이터가 삭제됩니다.<br>계속하시겠습니까?</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeCenterDeleteModal()">취소</button>
+      <button class="btn-confirm" onclick="confirmCenterDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ══════════════════════════════════════
+  // 계정 목록
+  // ══════════════════════════════════════
+  const ACCOUNTS = {
+    'admin':   '8b4e8274fd17ce1f4d74f566599df4f61a0d98a6d5b9218004a6c6bc05b61036',
+    '7047qkr': '879e18542053585a9d94a7fd3d0f36a28393f8c3dd4d21d2b41d28464a3b8fbd',
+    'slpsuy':  '98721d5dd9a4511269c510449302042a7ba9f02cad58bb983a1d93ec872dd13f',
+    'test':    '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+  };
+
+  async function hashPassword(pw) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  const NAMES = {
+    'admin':   '관리자',
+    '7047qkr': '박수정 선생님',
+    'slpsuy':  '박수영 선생님',
+    'test':    '테스트 선생님',
+  };
+  function getDisplayName(id) { return NAMES[id] || id; }
+
+  const SESSION_KEY = 'slp_session';
+  let currentUser = null;
+
+  async function doLogin() {
+    const id = document.getElementById('loginId').value.trim();
+    const pw = document.getElementById('loginPw').value;
+    const errEl = document.getElementById('loginError');
+    if (!id || !pw) { errEl.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
+    const hashed = await hashPassword(pw);
+    if (ACCOUNTS[id] && ACCOUNTS[id] === hashed) {
+      currentUser = id;
+      sessionStorage.setItem(SESSION_KEY, id);
+      document.getElementById('loginScreen').classList.remove('show');
+      document.getElementById('loggedInUser').textContent = getDisplayName(id);
+      errEl.textContent = '';
+      loadCenters(); renderCenterBar(); loadMonth();
+    } else {
+      errEl.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+      document.getElementById('loginPw').value = '';
+      document.getElementById('loginPw').focus();
+    }
+  }
+
+  function togglePw() {
+    const input = document.getElementById('loginPw');
+    const btn = document.getElementById('pwToggle');
+    if (input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+    else { input.type = 'password'; btn.textContent = '👁'; }
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem(SESSION_KEY);
+    currentUser = null;
+    document.getElementById('loginId').value = '';
+    document.getElementById('loginPw').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('loginScreen').classList.add('show');
+    setTimeout(() => document.getElementById('loginId').focus(), 50);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    ['loginId','loginPw'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+    });
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved && ACCOUNTS[saved]) {
+      currentUser = saved;
+      document.getElementById('loggedInUser').textContent = getDisplayName(saved);
+      document.getElementById('loginScreen').classList.remove('show');
+      loadCenters(); renderCenterBar(); loadMonth();
+    } else {
+      setTimeout(() => document.getElementById('loginId').focus(), 100);
+    }
+  });
+
+  // ══════════════════════════════════════
+  // 센터 관리
+  // ══════════════════════════════════════
+  function centersKey() { return `slp_centers_${currentUser}`; }
+  let centers = [];
+  let curCenterId = null;
+  let _centerModalMode = 'add';
+
+  function loadCenters() {
+    try { centers = JSON.parse(localStorage.getItem(centersKey())) || []; } catch(e) { centers = []; }
+    if (centers.length === 0) { centers = [{ id: 'c1', name: 'A센터' }]; saveCenters(); }
+    if (!curCenterId || !centers.find(c=>c.id===curCenterId)) curCenterId = centers[0].id;
+  }
+  function saveCenters() { localStorage.setItem(centersKey(), JSON.stringify(centers)); }
+
+  function renderCenterBar() {
+    const bar = document.getElementById('centerBar');
+    bar.innerHTML = '';
+    centers.forEach(c => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;align-items:center;gap:0;';
+      const btn = document.createElement('button');
+      btn.className = 'center-tab' + (c.id === curCenterId ? ' active' : '');
+      btn.style.borderRadius = centers.length > 1 ? '9px 0 0 9px' : '9px';
+      btn.style.borderRight = centers.length > 1 ? 'none' : '';
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = c.name;
+      nameSpan.title = '더블클릭으로 이름 변경';
+      nameSpan.ondblclick = (e) => { e.stopPropagation(); openRenameCenterModal(c.id); };
+      btn.appendChild(nameSpan);
+      btn.onclick = () => switchCenter(c.id);
+      wrap.appendChild(btn);
+      if (centers.length > 1) {
+        const del = document.createElement('button');
+        del.className = 'center-tab' + (c.id === curCenterId ? ' active' : '');
+        del.style.cssText = 'border-radius:0 9px 9px 0;padding:7px 9px;border-left:1px solid rgba(255,255,255,0.25);';
+        del.title = '센터 삭제';
+        del.textContent = '✕';
+        del.onclick = (e) => deleteCenter(e, c.id);
+        wrap.appendChild(del);
+      }
+      bar.appendChild(wrap);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'center-add-btn';
+    addBtn.textContent = '+ 센터 추가';
+    addBtn.onclick = openAddCenterModal;
+    bar.appendChild(addBtn);
+  }
+
+  function switchCenter(id) { curCenterId = id; renderCenterBar(); loadMonth(); }
+
+  function openAddCenterModal() {
+    _centerModalMode = 'add';
+    document.getElementById('centerModalTitle').textContent = '센터 추가';
+    document.getElementById('centerModalInput').value = '';
+    document.getElementById('centerModalOverlay').classList.add('show');
+    setTimeout(() => document.getElementById('centerModalInput').focus(), 50);
+  }
+  function openRenameCenterModal(id) {
+    _centerModalMode = id;
+    const c = centers.find(c=>c.id===id);
+    document.getElementById('centerModalTitle').textContent = '센터 이름 변경';
+    document.getElementById('centerModalInput').value = c ? c.name : '';
+    document.getElementById('centerModalOverlay').classList.add('show');
+    setTimeout(() => { const inp = document.getElementById('centerModalInput'); inp.focus(); inp.select(); }, 50);
+  }
+  function closeCenterModal() { document.getElementById('centerModalOverlay').classList.remove('show'); }
+  function confirmCenterModal() {
+    const name = document.getElementById('centerModalInput').value.trim();
+    if (!name) return;
+    if (_centerModalMode === 'add') {
+      const id = 'c' + Date.now();
+      centers.push({ id, name }); saveCenters(); curCenterId = id; renderCenterBar(); loadMonth();
+    } else {
+      const c = centers.find(c=>c.id===_centerModalMode);
+      if (c) { c.name = name; saveCenters(); renderCenterBar(); }
+    }
+    closeCenterModal();
+  }
+  document.getElementById('centerModalInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmCenterModal();
+    if (e.key === 'Escape') closeCenterModal();
+  });
+  document.getElementById('centerModalOverlay').addEventListener('click', function(e) { if (e.target === this) closeCenterModal(); });
+
+  let _deletingCenterId = null;
+  function deleteCenter(e, id) {
+    e.stopPropagation();
+    if (centers.length <= 1) { showToast('⚠️ 센터는 최소 1개 필요합니다'); return; }
+    const c = centers.find(c=>c.id===id);
+    _deletingCenterId = id;
+    document.getElementById('resetModal').classList.remove('show');
+    document.getElementById('centerDeleteModal').classList.add('show');
+    document.getElementById('centerDeleteName').textContent = c ? c.name : '';
+  }
+  function closeCenterDeleteModal() { document.getElementById('centerDeleteModal').classList.remove('show'); _deletingCenterId = null; }
+  function confirmCenterDelete() {
+    const id = _deletingCenterId; closeCenterDeleteModal(); if (!id) return;
+    const prefix = centerPrefix(id);
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(prefix)) keysToRemove.push(k); }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    centers = centers.filter(c=>c.id!==id); saveCenters();
+    if (curCenterId === id) curCenterId = centers[0].id;
+    renderCenterBar(); loadMonth(); showToast('🗑 센터가 삭제되었습니다');
+  }
+
+  // ══════════════════════════════════════
+  // 스토리지 키
+  // ══════════════════════════════════════
+  function centerPrefix(cid) { return `slp_${currentUser}_${cid}_`; }
+  function curPrefix()       { return centerPrefix(curCenterId); }
+
+  let rateHourly = 0;
+  let rows = [], idCounter = 0;
+
+  const _now = new Date();
+  let curYear  = _now.getFullYear();
+  let curMonth = _now.getMonth() + 1;
+
+  function monthKey(y, m) { return `${curPrefix()}${y}_${String(m).padStart(2,'0')}`; }
+  function curKey()        { return monthKey(curYear, curMonth); }
+  function monthLabel(y, m){ return `${y}년 ${m}월`; }
+
+  function renderMonthBar() {
+    document.getElementById('monthLabel').textContent = monthLabel(curYear, curMonth);
+    const chips = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(curPrefix())) {
+        const part = k.replace(curPrefix(),'');
+        const [y, m] = part.split('_').map(Number);
+        if (y && m) chips.push({y, m});
+      }
+    }
+    chips.sort((a,b)=> a.y!==b.y ? a.y-b.y : a.m-b.m);
+    const container = document.getElementById('monthChips');
+    container.innerHTML = '';
+    chips.forEach(({y, m}) => {
+      const isActive = y===curYear && m===curMonth;
+      const btn = document.createElement('button');
+      btn.className = 'month-chip has-data' + (isActive ? ' active' : '');
+      btn.textContent = monthLabel(y, m);
+      btn.onclick = () => switchMonth(y, m);
+      container.appendChild(btn);
+    });
+  }
+
+  function changeMonth(dir) {
+    curMonth += dir;
+    if (curMonth > 12) { curMonth = 1; curYear++; }
+    if (curMonth < 1)  { curMonth = 12; curYear--; }
+    loadMonth();
+  }
+  function switchMonth(y, m) { curYear = y; curMonth = m; loadMonth(); }
+
+  function loadMonth() {
+    rows = []; idCounter = 0;
+    document.getElementById('tableBody').innerHTML = '';
+    document.getElementById('mobileList').innerHTML = '';
+    const saved = localStorage.getItem(curKey());
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        rateHourly = data.rateHourly || 0;
+        document.getElementById('rateHourly').value = rateHourly || '';
+        if (data.rows && data.rows.length > 0) {
+          data.rows.forEach(r => {
+            const id = idCounter++;
+            // workEntries: [{date, hours, mins}, ...]
+            rows.push({ id, name: r.name||'', workEntries: r.workEntries||[] });
+            appendRowDOM(id);
+            updateTrigger(id);
+          });
+          checkMobileBtn(); renderMonthBar(); calcTotal(); return;
+        }
+      } catch(e) {}
+    }
+    rateHourly = 0;
+    document.getElementById('rateHourly').value = '';
+    addRow(); renderMonthBar();
+  }
+
+  function saveData() {
+    localStorage.setItem(curKey(), JSON.stringify({
+      rateHourly,
+      rows: rows.map(r => ({ name: r.name, workEntries: r.workEntries }))
+    }));
+    renderMonthBar();
+    const cname = (centers.find(c=>c.id===curCenterId)||{}).name||'';
+    showToast(`✅ [${cname}] ${monthLabel(curYear,curMonth)} 저장 완료`);
+  }
+
+  function openResetModal()  { document.getElementById('resetModal').classList.add('show'); }
+  function closeResetModal() { document.getElementById('resetModal').classList.remove('show'); }
+  function confirmReset() {
+    closeResetModal();
+    localStorage.removeItem(curKey());
+    rows = []; idCounter = 0; rateHourly = 0;
+    document.getElementById('rateHourly').value = '';
+    document.getElementById('tableBody').innerHTML = '';
+    document.getElementById('mobileList').innerHTML = '';
+    addRow(); renderMonthBar(); showToast('🗑 초기화되었습니다');
+  }
+
+  function exportExcel() {
+    const ym = monthLabel(curYear, curMonth);
+    const validRows = rows.filter(r => r.name && r.name.trim() !== '');
+    let csv = '\uFEFF';
+    csv += `알바 월급 계산서 (${ym})\n\n시급,${rateHourly}원\n\n`;
+    csv += `이름,근무날짜,근무시간,분,총근무시간(h),최종금액\n`;
+    validRows.forEach(r => {
+      const totalMins = calcRowMinutes(r);
+      const totalH = (totalMins / 60).toFixed(2);
+      const total = calcRow(r);
+      if (r.workEntries && r.workEntries.length > 0) {
+        r.workEntries.forEach((e, i) => {
+          csv += `${i===0?r.name:''},${e.date||''},${e.hours||0},${e.mins||0},${i===0?totalH:''},${i===0?total+'원':''}\n`;
+        });
+      } else {
+        csv += `${r.name},,,,0,0원\n`;
+      }
+    });
+    const totalAll = validRows.reduce((s,r)=>s+calcRow(r),0);
+    const totalMinsAll = validRows.reduce((s,r)=>s+calcRowMinutes(r),0);
+    csv += `\n합계,,,,${(totalMinsAll/60).toFixed(2)}시간,${totalAll}원\n`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+    a.download = `알바월급계산서_${curYear}${String(curMonth).padStart(2,'0')}.csv`;
+    a.click();
+    showToast('📊 엑셀 파일로 내보냈습니다');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  function onRateInput(val) {
+    rateHourly = parseInt(val.replace(/[^0-9]/g,''),10)||0;
+    refreshAllResults();
+  }
+
+  // 총 근무 분수 계산
+  function calcRowMinutes(row) {
+    return (row.workEntries||[]).reduce((s,e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
+  }
+  // 최종 금액 (분수 × 시급 / 60, 원 단위 반올림)
+  function calcRow(row) {
+    const mins = calcRowMinutes(row);
+    return Math.round(mins * rateHourly / 60);
+  }
+
+  function addRow() {
+    const id = idCounter++;
+    rows.push({ id, name:'', workEntries:[] });
+    appendRowDOM(id);
+    setTimeout(()=>{ const el=document.getElementById('name-'+id); if(el)el.focus(); },30);
+  }
+
+  function appendRowDOM(id) {
+    const tbody = document.getElementById('tableBody');
+    const tr = document.createElement('tr');
+    tr.id = 'row-'+id;
+    tr.innerHTML = buildRowHTML(id);
+    tbody.appendChild(tr);
+    const ml = document.getElementById('mobileList');
+    const mc = document.createElement('div');
+    mc.id = 'mcard-'+id;
+    mc.className = 'mobile-card';
+    mc.innerHTML = buildMobileCardHTML(id);
+    ml.appendChild(mc);
+    checkMobileBtn(); calcTotal();
+  }
+
+  function checkMobileBtn() {
+    document.getElementById('mobileAddBtn').style.display = window.innerWidth <= 680 ? 'block' : 'none';
+  }
+  window.addEventListener('resize', checkMobileBtn);
+
+  function buildRowHTML(id) {
+    const row = rows.find(r=>r.id===id);
+    const mins = calcRowMinutes(row);
+    const total = calcRow(row);
+    const hoursStr = mins > 0 ? `${Math.floor(mins/60)}h ${mins%60}m` : '–';
+    const rateDisp = rateHourly ? '₩'+fmt(rateHourly)+'/h' : '–';
+    const rateClass = rateHourly ? '' : 'none';
+    const resultClass = total > 0 ? 'has-val' : '';
+    const cnt = (row.workEntries||[]).length;
+    return `
+      <td><input class="input-name" id="name-${id}" type="text" placeholder="이름" value="${esc(row.name)}" oninput="updateField(${id},'name',this.value)" /></td>
+      <td>
+        <div class="edu-cell">
+          <div class="edu-trigger" onclick="openCalPopup(${id})" id="trigger-${id}">
+            <div class="edu-trigger-inner">
+              <span class="edu-trigger-text ${cnt>0?'has-days':''}" id="trigtext-${id}">${cnt>0?cnt+'일 입력됨':'날짜·시간 입력'}</span>
+              <span class="edu-trigger-dates" id="trigdates-${id}">${buildDateSummary(row)}</span>
+            </div>
+            <span class="edu-trigger-icon">🕐</span>
+          </div>
+        </div>
+      </td>
+      <td style="font-weight:600;color:${mins>0?'var(--text)':'var(--muted)'};" id="hours-${id}">${hoursStr}</td>
+      <td class="applied-rate ${rateClass}" id="rate-${id}">${rateDisp}</td>
+      <td class="result-cell ${resultClass}" id="result-${id}">${total>0?'₩'+fmt(total):'–'}</td>
+      <td><button class="btn-del" onclick="removeRow(${id})" title="삭제">✕</button></td>`;
+  }
+
+  function buildMobileCardHTML(id) {
+    const row = rows.find(r=>r.id===id);
+    const total = calcRow(row);
+    const mins = calcRowMinutes(row);
+    const resultClass = total > 0 ? 'has-val' : '';
+    const rateClass = rateHourly ? '' : 'none';
+    const rateDisp = rateHourly ? '₩'+fmt(rateHourly)+'/h' : '–';
+    const cnt = (row.workEntries||[]).length;
+    return `
+      <div class="mobile-card-top">
+        <input class="mobile-name-input" id="mname-${id}" type="text" placeholder="이름 입력" value="${esc(row.name)}" oninput="updateField(${id},'name',this.value)" />
+        <button class="btn-del" onclick="removeRow(${id})">✕</button>
+      </div>
+      <div class="mobile-card-body">
+        <div class="mobile-plta-row">
+          <div class="edu-trigger" onclick="openCalPopup(${id})" id="mtrigger-${id}" style="flex:1;">
+            <div class="edu-trigger-inner">
+              <span class="edu-trigger-text ${cnt>0?'has-days':''}" id="mtrigtext-${id}">${cnt>0?cnt+'일 입력됨':'날짜·시간 입력'}</span>
+              <span class="edu-trigger-dates" id="mtrigdates-${id}">${buildDateSummary(row)}</span>
+            </div>
+            <span class="edu-trigger-icon">🕐</span>
+          </div>
+          <div class="mobile-plta-right">
+            <span class="mobile-plta-rate-label">시급</span>
+            <div class="mobile-rate ${rateClass}" id="mrate-${id}">${rateDisp}</div>
+          </div>
+        </div>
+        <div class="mobile-field" style="grid-column:1/-1">
+          <label>총 근무시간</label>
+          <div style="font-weight:600;font-size:0.95rem;color:${mins>0?'var(--text)':'var(--muted)'};" id="mhours-${id}">${mins>0?Math.floor(mins/60)+'h '+mins%60+'m':'–'}</div>
+        </div>
+        <div class="mobile-field" style="grid-column:1/-1">
+          <label>최종 금액</label>
+          <div class="mobile-result ${resultClass}" id="mresult-${id}">${total>0?'₩ '+fmt(total):'–'}</div>
+        </div>
+      </div>`;
+  }
+
+  function buildDateSummary(row) {
+    if (!row.workEntries || row.workEntries.length === 0) return '';
+    return row.workEntries.slice(0,4).map(e => {
+      const h = parseInt(e.hours||0,10), m = parseInt(e.mins||0,10);
+      const timeStr = h||m ? ` (${h}h${m?m+'m':''})` : '';
+      return (e.date||'?') + timeStr;
+    }).join(', ') + (row.workEntries.length > 4 ? ' ...' : '');
+  }
+
+  // ── 근무 팝업 ──
+  let calActiveId = null;
+  // workEntriesTemp: [{date:'', hours:0, mins:0}, ...]
+  let workEntriesTemp = [];
+
+  function openCalPopup(id) {
+    calActiveId = id;
+    const row = rows.find(r=>r.id===id);
+    workEntriesTemp = JSON.parse(JSON.stringify(row.workEntries||[]));
+    if (workEntriesTemp.length === 0) workEntriesTemp.push({date:'', hours:'', mins:''});
+    renderWorkEntries();
+    document.getElementById('calPopupOverlay').classList.add('show');
+  }
+
+  function calClose() {
+    if (calActiveId !== null) {
+      const row = rows.find(r=>r.id===calActiveId);
+      if (row) {
+        // 빈 항목 제거
+        row.workEntries = workEntriesTemp.filter(e => e.date && e.date.trim());
+        updateTrigger(calActiveId);
+        updateResultCell(calActiveId);
+        calcTotal();
+      }
+    }
+    document.getElementById('calPopupOverlay').classList.remove('show');
+    calActiveId = null;
+  }
+
+  function calOverlayClick(e) {
+    if (e.target === document.getElementById('calPopupOverlay')) calClose();
+  }
+
+  function calClearAll() {
+    workEntriesTemp = [{date:'', hours:'', mins:''}];
+    renderWorkEntries();
+  }
+
+  function addWorkEntry() {
+    workEntriesTemp.push({date:'', hours:'', mins:''});
+    renderWorkEntries();
+    // 새 항목으로 스크롤
+    const list = document.getElementById('workEntryList');
+    setTimeout(() => { list.scrollTop = list.scrollHeight; }, 50);
+  }
+
+  function removeWorkEntry(i) {
+    workEntriesTemp.splice(i, 1);
+    if (workEntriesTemp.length === 0) workEntriesTemp.push({date:'', hours:'', mins:''});
+    renderWorkEntries();
+  }
+
+  const DOW_KO = ['일','월','화','수','목','금','토'];
+
+  function renderWorkEntries() {
+    const list = document.getElementById('workEntryList');
+    list.innerHTML = '';
+    workEntriesTemp.forEach((entry, i) => {
+      const row = document.createElement('div');
+      row.className = 'work-entry-row';
+
+      // 날짜 입력
+      const dateWrap = document.createElement('div');
+      dateWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;';
+      const dateInp = document.createElement('input');
+      dateInp.type = 'date';
+      dateInp.value = entry.date || '';
+      dateInp.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-family:inherit;font-size:0.85rem;color:var(--text);outline:none;width:130px;';
+      dateInp.oninput = () => {
+        workEntriesTemp[i].date = dateInp.value;
+        // 요일 표시 업데이트
+        const dowEl = dateWrap.querySelector('.dow-label');
+        if (dowEl) dowEl.textContent = dateInp.value ? getDowLabel(dateInp.value) : '';
+      };
+      const dowEl = document.createElement('span');
+      dowEl.className = 'dow-label';
+      dowEl.style.cssText = 'font-size:0.7rem;color:var(--muted);padding-left:2px;';
+      dowEl.textContent = entry.date ? getDowLabel(entry.date) : '';
+      dateWrap.appendChild(dateInp);
+      dateWrap.appendChild(dowEl);
+
+      // 시간 입력
+      const timeWrap = document.createElement('div');
+      timeWrap.className = 'work-time-wrap';
+      const hInp = document.createElement('input');
+      hInp.className = 'work-time-input';
+      hInp.type = 'number'; hInp.min = 0; hInp.max = 23; hInp.placeholder = '0';
+      hInp.value = entry.hours !== '' ? entry.hours : '';
+      hInp.oninput = () => { workEntriesTemp[i].hours = parseInt(hInp.value,10)||0; updateEntryTotal(i, totalEl); };
+      const sep = document.createElement('span'); sep.className = 'work-time-sep'; sep.textContent = 'h';
+      const mInp = document.createElement('input');
+      mInp.className = 'work-time-input';
+      mInp.type = 'number'; mInp.min = 0; mInp.max = 59; mInp.placeholder = '0';
+      mInp.value = entry.mins !== '' ? entry.mins : '';
+      mInp.oninput = () => { workEntriesTemp[i].mins = parseInt(mInp.value,10)||0; updateEntryTotal(i, totalEl); };
+      const sep2 = document.createElement('span'); sep2.className = 'work-time-sep'; sep2.textContent = 'm';
+      timeWrap.append(hInp, sep, mInp, sep2);
+
+      // 소계
+      const totalEl = document.createElement('div');
+      totalEl.className = 'work-entry-total';
+      updateEntryTotal(i, totalEl);
+
+      // 삭제 버튼
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-del';
+      delBtn.textContent = '✕';
+      delBtn.title = '삭제';
+      delBtn.onclick = () => removeWorkEntry(i);
+
+      row.append(dateWrap, timeWrap, totalEl, delBtn);
+      list.appendChild(row);
+    });
+    updateCalFooter();
+  }
+
+  function getDowLabel(dateStr) {
+    try {
+      const d = new Date(dateStr + 'T00:00:00');
+      const dow = DOW_KO[d.getDay()];
+      const isSun = d.getDay() === 0, isSat = d.getDay() === 6;
+      return `(${dow})`;
+    } catch(e) { return ''; }
+  }
+
+  function updateEntryTotal(i, el) {
+    const h = parseInt(workEntriesTemp[i].hours||0,10);
+    const m = parseInt(workEntriesTemp[i].mins||0,10);
+    const total = Math.round((h*60+m) * rateHourly / 60);
+    if ((h||m) && rateHourly) {
+      el.className = 'work-entry-total';
+      el.textContent = '₩'+fmt(total);
+    } else if (h||m) {
+      el.className = 'work-entry-total';
+      el.textContent = h+'h'+(m?m+'m':'');
+    } else {
+      el.className = 'work-entry-total empty';
+      el.textContent = '–';
+    }
+  }
+
+  function updateCalFooter() {
+    const el = document.getElementById('calPopupCount');
+    const filled = workEntriesTemp.filter(e => e.date && e.date.trim()).length;
+    const totalMins = workEntriesTemp.reduce((s,e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
+    if (filled === 0) { el.textContent = '입력 없음'; el.className = 'cal-count-label empty'; }
+    else { el.textContent = `${filled}일 · 총 ${Math.floor(totalMins/60)}h ${totalMins%60}m`; el.className = 'cal-count-label'; }
+  }
+
+  function updateTrigger(id) {
+    const row = rows.find(r=>r.id===id);
+    const cnt = (row.workEntries||[]).length;
+    const txt = cnt > 0 ? cnt+'일 입력됨' : '날짜·시간 입력';
+    const cls = 'edu-trigger-text' + (cnt > 0 ? ' has-days' : '');
+    ['trigtext-'+id,'mtrigtext-'+id].forEach(elId => {
+      const el=document.getElementById(elId); if(!el) return; el.textContent=txt; el.className=cls;
+    });
+    const summary = buildDateSummary(row);
+    ['trigdates-'+id,'mtrigdates-'+id].forEach(elId => {
+      const el=document.getElementById(elId); if(!el) return; el.textContent=summary;
+    });
+  }
+
+  function updateResultCell(id) {
+    const row = rows.find(r=>r.id===id);
+    const total = calcRow(row);
+    const mins = calcRowMinutes(row);
+    const resultClass = total > 0 ? 'has-val' : '';
+    const el = document.getElementById('result-'+id);
+    if(el) { el.className='result-cell '+resultClass; el.textContent=total>0?'₩'+fmt(total):'–'; }
+    const mel = document.getElementById('mresult-'+id);
+    if(mel) { mel.className='mobile-result '+resultClass; mel.textContent=total>0?'₩ '+fmt(total):'–'; }
+    // 총 근무시간
+    const hel = document.getElementById('hours-'+id);
+    if(hel) { hel.textContent=mins>0?Math.floor(mins/60)+'h '+mins%60+'m':'–'; hel.style.color=mins>0?'var(--text)':'var(--muted)'; }
+    const mhel = document.getElementById('mhours-'+id);
+    if(mhel) { mhel.textContent=mins>0?Math.floor(mins/60)+'h '+mins%60+'m':'–'; mhel.style.color=mins>0?'var(--text)':'var(--muted)'; }
+    // 시급 표시
+    const rateClass = rateHourly ? '' : 'none';
+    const rateDisp = rateHourly ? '₩'+fmt(rateHourly)+'/h' : '–';
+    const rel = document.getElementById('rate-'+id);
+    if(rel) { rel.className='applied-rate '+rateClass; rel.textContent=rateDisp; }
+    const mrel = document.getElementById('mrate-'+id);
+    if(mrel) { mrel.className='mobile-rate '+rateClass; mrel.textContent=rateDisp; }
+  }
+
+  function refreshAllResults() { rows.forEach(r=>updateResultCell(r.id)); calcTotal(); }
+
+  function removeRow(id) {
+    rows = rows.filter(r=>r.id!==id);
+    const tr=document.getElementById('row-'+id); if(tr) tr.remove();
+    const mc=document.getElementById('mcard-'+id); if(mc) mc.remove();
+    calcTotal();
+  }
+
+  function checkDuplicateNames() {
+    const nameCount = {};
+    rows.forEach(r => { const n=r.name.trim(); if(n) nameCount[n]=(nameCount[n]||0)+1; });
+    rows.forEach(r => {
+      const isDup = r.name.trim() && nameCount[r.name.trim()] > 1;
+      const pc=document.getElementById('name-'+r.id);
+      const mb=document.getElementById('mname-'+r.id);
+      if(pc) pc.classList.toggle('dup', isDup);
+      if(mb) mb.classList.toggle('dup', isDup);
+    });
+  }
+
+  function calcTax(gross) {
+    const fl_income = Math.round(gross * 0.03);
+    const fl_local  = Math.round(gross * 0.003);
+    const fl_total  = fl_income + fl_local;
+    const fl_net    = gross - fl_total;
+    const ins_pension = Math.round(gross * 0.045);
+    const ins_health  = Math.round(gross * 0.03545);
+    const ins_ltc     = Math.round(gross * 0.004591);
+    const ins_emp     = Math.round(gross * 0.009);
+    const ins_total   = ins_pension + ins_health + ins_ltc + ins_emp;
+    const ins_net     = gross - ins_total;
+    return { fl_income, fl_local, fl_total, fl_net, ins_pension, ins_health, ins_ltc, ins_emp, ins_total, ins_net };
+  }
+
+  function renderTax(gross) {
+    const t = calcTax(gross);
+    document.getElementById('fl-net').textContent    = fmt(t.fl_net);
+    document.getElementById('fl-gross').textContent  = '₩' + fmt(gross);
+    document.getElementById('fl-income').textContent = '-₩' + fmt(t.fl_income);
+    document.getElementById('fl-local').textContent  = '-₩' + fmt(t.fl_local);
+    document.getElementById('fl-total-tax').textContent = '-₩' + fmt(t.fl_total);
+    document.getElementById('ins-net').textContent     = fmt(t.ins_net);
+    document.getElementById('ins-gross').textContent   = '₩' + fmt(gross);
+    document.getElementById('ins-pension').textContent = '-₩' + fmt(t.ins_pension);
+    document.getElementById('ins-health').textContent  = '-₩' + fmt(t.ins_health);
+    document.getElementById('ins-ltc').textContent     = '-₩' + fmt(t.ins_ltc);
+    document.getElementById('ins-emp').textContent     = '-₩' + fmt(t.ins_emp);
+    document.getElementById('ins-total').textContent   = '-₩' + fmt(t.ins_total);
+  }
+
+  function calcTotal() {
+    const total = rows.reduce((s,r)=>s+calcRow(r), 0);
+    const totalMins = rows.reduce((s,r)=>s+calcRowMinutes(r), 0);
+    document.getElementById('totalDisplay').textContent = fmt(total);
+    const uniqueNames = new Set(rows.map(r=>r.name.trim()).filter(n=>n!==''));
+    document.getElementById('empCount').textContent = uniqueNames.size;
+    document.getElementById('totalHoursDisplay').textContent = (totalMins/60).toFixed(1);
+    renderTax(total);
+  }
+
+  function updateField(id, field, value) {
+    const row = rows.find(r=>r.id===id); if(!row) return;
+    row[field] = value;
+    if(field==='name') {
+      const pc=document.getElementById('name-'+id), mb=document.getElementById('mname-'+id);
+      if(pc&&document.activeElement!==pc) pc.value=value;
+      if(mb&&document.activeElement!==mb) mb.value=value;
+      checkDuplicateNames();
+    }
+    updateResultCell(id); calcTotal();
+  }
+
+  function fmt(n) { return (n||0).toLocaleString('ko-KR'); }
+  function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  document.getElementById('resetModal').addEventListener('click', function(e){ if(e.target===this) closeResetModal(); });
+</script>
+</body>
+</html>
