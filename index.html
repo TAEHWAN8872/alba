@@ -1226,12 +1226,27 @@
     // 현재 달의 주차 계산
     const weeks = getWeeksOfMonth(curYear, curMonth);
 
-    // 현재 주차 선택: 이미 데이터가 있는 첫 주차, 없으면 0
-    curWeekIdx = 0;
-    if (workEntriesTemp.length > 0) {
-      for (let i = 0; i < workEntriesTemp.length; i++) {
-        const wi = getWeekIdxForDate(workEntriesTemp[i].date, weeks);
-        if (wi >= 0) { curWeekIdx = wi; break; }
+    // 허용된 주차 인덱스 먼저 확인 (N주차 행인 경우)
+    const _allowedIdx = (() => {
+      const r = rows.find(rr => rr.id === id);
+      if (!r || !r.name) return -1;
+      const m2 = r.name.trim().match(/^(\d+)주차$/);
+      if (!m2) return -1;
+      const n = parseInt(m2[1], 10);
+      for (let i = 0; i < weeks.length; i++) { if (weeks[i].label === `${n}주차`) return i; }
+      return -1;
+    })();
+
+    // 현재 주차 선택: 허용된 주차가 있으면 그것 우선, 아니면 데이터 있는 첫 주차, 없으면 0
+    if (_allowedIdx >= 0) {
+      curWeekIdx = _allowedIdx;
+    } else {
+      curWeekIdx = 0;
+      if (workEntriesTemp.length > 0) {
+        for (let i = 0; i < workEntriesTemp.length; i++) {
+          const wi = getWeekIdxForDate(workEntriesTemp[i].date, weeks);
+          if (wi >= 0) { curWeekIdx = wi; break; }
+        }
       }
     }
 
@@ -1244,9 +1259,25 @@
     document.getElementById('calPopupOverlay').classList.add('show');
   }
 
+  // 현재 열려있는 행의 이름이 "N주차" 패턴인지 확인하고, 허용 주차 인덱스 반환 (-1이면 제한 없음)
+  function getAllowedWeekIdx(weeks) {
+    if (calActiveId === null) return -1;
+    const row = rows.find(r => r.id === calActiveId);
+    if (!row || !row.name) return -1;
+    const match = row.name.trim().match(/^(\d+)주차$/);
+    if (!match) return -1;
+    const weekNum = parseInt(match[1], 10);
+    // weeks 배열에서 해당 label을 찾음
+    for (let i = 0; i < weeks.length; i++) {
+      if (weeks[i].label === `${weekNum}주차`) return i;
+    }
+    return -1;
+  }
+
   function renderWeekTabs(weeks) {
     const bar = document.getElementById('weekTabBar');
     bar.innerHTML = '';
+    const allowedIdx = getAllowedWeekIdx(weeks);
     weeks.forEach((w, i) => {
       const hasData = workEntriesTemp.some(e => getWeekIdxForDate(e.date, weeks) === i && e.date);
       // 이 주차 근무시간 계산
@@ -1255,14 +1286,38 @@
       const weekH = weekMins / 60;
       const qualifies = weekH >= 15;
       const holidayPreview = qualifies && rateHourly ? '₩'+fmt(Math.round((weekH/40)*8*rateHourly)) : '';
+      const isLocked = allowedIdx >= 0 && i !== allowedIdx;
       const btn = document.createElement('button');
-      btn.className = 'week-tab-btn' + (i === curWeekIdx ? ' active' : '') + (hasData ? ' has-data' : '');
+      btn.className = 'week-tab-btn' + (i === curWeekIdx ? ' active' : '') + (hasData ? ' has-data' : '') + (isLocked ? ' locked-week' : '');
+      if (isLocked) {
+        btn.style.cssText = 'opacity:0.45;cursor:not-allowed;';
+        btn.title = `${w.label}은 이 행에서 입력할 수 없습니다`;
+      }
       btn.innerHTML = `${w.label}${holidayPreview ? '<span class="week-date-range" style="color:var(--yellow)">'+holidayPreview+' 주휴</span>' : '<span class="week-date-range">'+w.range+'</span>'}`;
       btn.onclick = () => {
         const wk = getWeeksOfMonth(curYear, curMonth);
+        const allowed = getAllowedWeekIdx(wk);
+        if (allowed >= 0 && i !== allowed) {
+          alert(`⚠️ 이 행은 "${wk[allowed].label}"만 입력할 수 있습니다.\n현재 클릭한 탭은 "${w.label}"입니다.`);
+          return;
+        }
         curWeekIdx = i;
         renderWeekTabs(wk);
         renderWorkEntriesForWeek(wk);
+        // 범위 패널이 열려있으면 날짜 범위 갱신
+        if (_rangePanelOpen) {
+          const wCur = wk[curWeekIdx];
+          if (wCur) {
+            const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const minVal = pad(wCur.start);
+            const maxVal = pad(wCur.end);
+            const startInp = document.getElementById('rangeStart');
+            const endInp   = document.getElementById('rangeEnd');
+            startInp.min = minVal; startInp.max = maxVal; startInp.value = minVal;
+            endInp.min   = minVal; endInp.max   = maxVal; endInp.value   = maxVal;
+            updateRangePreview();
+          }
+        }
       };
       bar.appendChild(btn);
     });
