@@ -683,9 +683,9 @@
       <div class="range-panel-title">📅 날짜 범위로 일괄 추가</div>
       <div class="range-panel-row">
         <div class="range-date-wrap" style="flex-basis:100%;">
-          <input type="date" class="range-date-inp" id="rangeStart" oninput="updateRangePreview()" />
+          <input type="date" class="range-date-inp" id="rangeStart" oninput="updateRangePreview()" onchange="updateRangePreview()" />
           <span class="range-sep">~</span>
-          <input type="date" class="range-date-inp" id="rangeEnd" oninput="updateRangePreview()" />
+          <input type="date" class="range-date-inp" id="rangeEnd" oninput="updateRangePreview()" onchange="updateRangePreview()" />
         </div>
         <div class="range-time-wrap">
           <input type="number" class="range-time-inp" id="rangeHours" min="0" max="23" placeholder="3" oninput="updateRangePreview()" />
@@ -1457,12 +1457,12 @@
           dateInp.min = pad(week.start);
           dateInp.max = pad(week.end);
         }
-        dateInp.oninput = () => {
+        function handleDateChange() {
           const val = dateInp.value;
           if (!val) return;
           const wk2 = getWeeksOfMonth(curYear, curMonth);
           const w = wk2[curWeekIdx];
-          // 선택된 주차 범위 밖이면 강제로 해당 주차 첫날로 되돌림
+          // 선택된 주차 범위 밖이면 강제로 해당 주차 첫날로 되돌림 (모바일 포함)
           if (w) {
             const minStr = pad(w.start);
             const maxStr = pad(w.end);
@@ -1482,7 +1482,9 @@
           setDateLabel(val);
           updateCalFooter();
           renderWeekTabs(wk2);
-        };
+        }
+        dateInp.oninput = handleDateChange;
+        dateInp.onchange = handleDateChange;
 
         // 시간 입력
         const timeWrap = document.createElement('div');
@@ -1649,13 +1651,21 @@
     if (s > e) { showToast('⚠️ 시작일이 종료일보다 늦습니다'); return; }
     const wk = getWeeksOfMonth(curYear, curMonth);
     const w = wk[curWeekIdx];
-    if (w && (s < w.start || e > w.end)) {
-      showToast(`⚠️ ${w.label}(${w.range}) 범위를 벗어납니다`); return;
-    }
     const pad2 = n => String(n).padStart(2,'0');
+    const padDate = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    // 현재 주차 범위 문자열 (모바일에서 min/max 무시 대비 — 루프에서 직접 스킵)
+    const minStr = w ? padDate(w.start) : null;
+    const maxStr = w ? padDate(w.end)   : null;
     let cur = new Date(s);
+    let added = 0, skipped = 0;
     while (cur <= e) {
       const dateStr = `${cur.getFullYear()}-${pad2(cur.getMonth()+1)}-${pad2(cur.getDate())}`;
+      // 현재 주차 범위 밖이면 스킵 (모바일에서 min/max 무시해도 안전)
+      if (minStr && maxStr && (dateStr < minStr || dateStr > maxStr)) {
+        cur.setDate(cur.getDate() + 1);
+        skipped++;
+        continue;
+      }
       const existing = workEntriesTemp.findIndex(en => en.date === dateStr);
       if (existing >= 0) {
         workEntriesTemp[existing].hours = h;
@@ -1663,7 +1673,12 @@
       } else {
         workEntriesTemp.push({ date: dateStr, hours: h, mins: m });
       }
+      added++;
       cur.setDate(cur.getDate() + 1);
+    }
+    if (added === 0) {
+      showToast(`⚠️ ${w ? w.label+'('+w.range+') ' : ''}범위 안에 추가할 날짜가 없습니다`);
+      return;
     }
     // 패널 닫기
     _rangePanelOpen = false;
@@ -1675,6 +1690,7 @@
     renderWeekTabs(wk);
     renderWorkEntriesForWeek(wk);
     updateCalFooter();
+    if (skipped > 0) showToast(`✅ ${added}일 추가 (${skipped}일은 이 주차 범위 밖이라 제외됨)`);
   }
 
   function removeWorkEntry(i) {
