@@ -1092,13 +1092,31 @@
 
   // 주휴수당 계산: 주차별로 합산
   // 공식: (해당 주 근무시간 / 40) × 8 × 시급  (단, 주 15시간 이상 & 소정근로일 개근 시)
+  // 자유모드로 다른 월 날짜가 입력된 경우도 실제 월요일 기준 주간으로 묶어서 계산
+  function getMondayKey(dateStr) {
+    // 해당 날짜가 속한 주의 월요일 날짜 문자열 반환 (월요일 기준 주간)
+    const parts = dateStr.split('-');
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 12, 0, 0);
+    const dow = d.getDay(); // 0=일, 1=월 ... 6=토
+    const diffToMonday = dow === 0 ? -6 : 1 - dow; // 일요일이면 -6, 나머지는 1-dow
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diffToMonday);
+    const pad = n => String(n).padStart(2,'0');
+    return `${monday.getFullYear()}-${pad(monday.getMonth()+1)}-${pad(monday.getDate())}`;
+  }
+
   function calcHolidayPay(row) {
     if (!rateHourly || !row.workEntries || row.workEntries.length === 0) return 0;
-    const weeks = getWeeksOfMonth(curYear, curMonth);
+    // 날짜별로 실제 월요일 기준 주간으로 그룹핑 (월 경계 무관)
+    const weekMap = {};
+    row.workEntries.forEach(e => {
+      if (!e.date || !e.date.trim()) return;
+      const key = getMondayKey(e.date);
+      if (!weekMap[key]) weekMap[key] = 0;
+      weekMap[key] += parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10);
+    });
     let total = 0;
-    weeks.forEach((w, wi) => {
-      const weekEntries = row.workEntries.filter(e => getWeekIdxForDate(e.date, weeks) === wi);
-      const weekMins = weekEntries.reduce((s, e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
+    Object.values(weekMap).forEach(weekMins => {
       const weekHours = weekMins / 60;
       if (weekHours >= 15) {
         // 주휴수당 = (주 근무시간 / 5) × 시급
@@ -1430,8 +1448,17 @@
 
   function renderWorkEntriesForWeek(weeks) {
     const week = weeks[curWeekIdx];
-    const weekEntriesForCalc = workEntriesTemp.filter(e => getWeekIdxForDate(e.date, weeks) === curWeekIdx && e.date);
-    const curWeekMins = weekEntriesForCalc.reduce((s,e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
+    // 자유모드: 전체 항목을 실제 월요일 기준 주간으로 묶어 현재 탭 주간 합산
+    let curWeekMins = 0;
+    if (_freeMode && week) {
+      const pad = n => String(n).padStart(2,'0');
+      const curMondayKey = `${week.start.getFullYear()}-${pad(week.start.getMonth()+1)}-${pad(week.start.getDate())}`;
+      curWeekMins = workEntriesTemp.filter(e => e.date && getMondayKey(e.date) === curMondayKey)
+        .reduce((s,e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
+    } else {
+      const weekEntriesForCalc = workEntriesTemp.filter(e => getWeekIdxForDate(e.date, weeks) === curWeekIdx && e.date);
+      curWeekMins = weekEntriesForCalc.reduce((s,e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
+    }
     const curWeekH = curWeekMins / 60;
     const curQualifies = curWeekH >= 15;
     const curHoliday = curQualifies && rateHourly ? Math.round((curWeekH/40)*8*rateHourly) : 0;
@@ -1503,6 +1530,8 @@
           dateInp.min = pad(week.start);
           dateInp.max = pad(week.end);
         }
+        // 자유모드: min/max 제한 없음 (어느 날짜든 입력 가능)
+        if (_freeMode) { dateInp.removeAttribute('min'); dateInp.removeAttribute('max'); }
         function handleDateChange() {
           const val = dateInp.value;
           if (!val) return;
@@ -1717,8 +1746,16 @@
       const startInp = document.getElementById('rangeStart');
       const endInp   = document.getElementById('rangeEnd');
       const allowedIdxForRange = getAllowedWeekIdx(wk);
-      if (_freeMode || allowedIdxForRange < 0) {
-        // 자유 입력 모드 또는 주차 제한 없는 행: 해당 월 전체 범위로 설정
+      if (_freeMode) {
+        // 자유모드: 날짜 제한 없음, 기본값만 현재 월로
+        const monthStart = new Date(curYear, curMonth - 1, 1, 12, 0, 0);
+        const monthEnd   = new Date(curYear, curMonth, 0, 12, 0, 0);
+        startInp.removeAttribute('min'); startInp.removeAttribute('max');
+        endInp.removeAttribute('min');   endInp.removeAttribute('max');
+        startInp.value = pad(monthStart);
+        endInp.value   = pad(monthEnd);
+      } else if (allowedIdxForRange < 0) {
+        // 주차 제한 없는 행: 해당 월 전체 범위
         const monthStart = new Date(curYear, curMonth - 1, 1, 12, 0, 0);
         const monthEnd   = new Date(curYear, curMonth, 0, 12, 0, 0);
         startInp.min = pad(monthStart); startInp.max = pad(monthEnd);
