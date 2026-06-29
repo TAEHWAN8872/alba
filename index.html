@@ -22,7 +22,7 @@
     header h1 span { color: var(--accent-light); }
     header p { color: var(--muted); margin-top: 6px; font-size: 0.92rem; }
 
-    /* ── 센터 탭 바 ── */
+    /* ── 탭 바 ── */
     .center-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; }
     .center-tab { display: flex; align-items: center; gap: 4px; padding: 7px 14px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit; }
     .center-tab:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.05); }
@@ -31,7 +31,7 @@
     .center-tab .center-tab-del:hover { opacity: 1; }
     .center-add-btn { display: flex; align-items: center; gap: 5px; padding: 7px 13px; border-radius: 9px; border: 1px dashed var(--border); background: transparent; color: var(--muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
     .center-add-btn:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.05); }
-    /* 센터 이름 편집 모달 */
+    /* 이름 편집 모달 */
     .center-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 3000; align-items: center; justify-content: center; }
     .center-modal-overlay.show { display: flex; }
     .center-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 28px 24px; max-width: 320px; width: 90%; }
@@ -109,7 +109,11 @@
     /* 근무 입력 팝업 */
     .cal-popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 2000; align-items: center; justify-content: center; }
     .cal-popup-overlay.show { display: flex; }
-    .cal-popup { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: min(420px, 96vw); box-shadow: 0 12px 40px rgba(0,0,0,0.18); max-height: 92vh; overflow-y: auto; }
+    .cal-popup { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px 16px; width: min(420px, 96vw); box-shadow: 0 12px 40px rgba(0,0,0,0.18); max-height: 92vh; overflow-y: auto; }
+    @media (max-width: 480px) {
+      .cal-popup { border-radius: 16px 16px 0 0; position: fixed; bottom: 0; left: 0; right: 0; width: 100%; max-height: 85vh; }
+      .cal-popup-overlay.show { align-items: flex-end; }
+    }
     .cal-popup-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .cal-popup-title { font-size: 1rem; font-weight: 700; color: var(--text); }
     .cal-popup-title span { color: var(--accent-light); }
@@ -117,30 +121,34 @@
     .cal-nav-btn:hover { background: rgba(108,99,255,0.1); border-color: var(--accent-light); }
 
     /* 날짜+시간 입력 그리드 */
-    .work-entry-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 55vh; overflow-y: auto; padding-right: 4px; }
-    .work-entry-row { display: grid; grid-template-columns: auto 1fr 1fr auto; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+    .work-entry-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 60vh; overflow-y: auto; padding-right: 2px; }
+    .work-entry-row { display: flex; flex-direction: column; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+    .work-entry-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .work-entry-row-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .work-entry-date { font-size: 0.88rem; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 50px; }
     .work-entry-date.sun { color: #e04040; }
     .work-entry-date.sat { color: var(--accent-light); }
-    .work-time-wrap { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; transition: border-color 0.2s; }
+    .work-time-wrap { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; transition: border-color 0.2s; }
     .work-time-wrap:focus-within { border-color: var(--accent-light); }
-    .work-time-input { background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 0.88rem; font-weight: 600; width: 36px; text-align: center; outline: none; }
+    .work-time-input { background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 0.95rem; font-weight: 600; width: 40px; text-align: center; outline: none; }
     .work-time-input::placeholder { color: var(--muted); font-weight: 400; }
-    .work-time-sep { color: var(--muted); font-size: 0.8rem; }
+    .work-time-sep { color: var(--muted); font-size: 0.82rem; font-weight: 600; }
     .work-time-label { font-size: 0.72rem; color: var(--muted); }
-    .work-entry-total { font-size: 0.8rem; font-weight: 700; color: var(--accent-light); white-space: nowrap; text-align: right; min-width: 42px; }
+    .work-entry-total { font-size: 0.85rem; font-weight: 700; color: var(--accent-light); white-space: nowrap; text-align: right; }
     .work-entry-total.empty { color: var(--muted); font-weight: 400; }
+    .date-input-styled { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-family: inherit; font-size: 0.88rem; color: var(--text); outline: none; flex: 1; min-width: 0; transition: border-color 0.2s; }
+    .date-input-styled:focus { border-color: var(--accent-light); }
 
-    .work-add-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.84rem; padding: 7px 12px; border-radius: 7px; cursor: pointer; transition: all 0.15s; margin-bottom: 14px; }
+    .work-add-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.88rem; padding: 10px 12px; border-radius: 9px; cursor: pointer; transition: all 0.15s; margin-bottom: 14px; width: 100%; }
     .work-add-btn:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.04); }
 
     .cal-popup-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border); }
     .cal-count-label { font-size: 0.82rem; color: var(--accent-light); font-weight: 700; }
     .cal-count-label.empty { color: var(--muted); font-weight: 400; }
     .cal-footer-btns { display: flex; gap: 8px; }
-    .cal-btn-clear { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.8rem; padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+    .cal-btn-clear { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.85rem; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
     .cal-btn-clear:hover { color: var(--danger); border-color: rgba(224,62,62,0.4); }
-    .cal-btn-done { background: var(--accent); border: none; color: #fff; font-family: inherit; font-size: 0.8rem; font-weight: 700; padding: 5px 14px; border-radius: 7px; cursor: pointer; }
+    .cal-btn-done { background: var(--accent); border: none; color: #fff; font-family: inherit; font-size: 0.85rem; font-weight: 700; padding: 8px 20px; border-radius: 8px; cursor: pointer; }
     .cal-btn-done:hover { background: var(--accent-light); }
 
     .applied-rate { font-size: 0.85rem; white-space: nowrap; text-align: center; font-weight: 600; color: var(--accent-light); }
@@ -239,15 +247,21 @@
     .mobile-add-btn:hover { border-color: var(--accent); color: var(--accent-light); }
 
     @media (max-width: 680px) {
-      body { padding: 24px 12px 80px; }
-      header h1 { font-size: 1.5rem; }
+      body { padding: 20px 12px 80px; }
+      header h1 { font-size: 1.4rem; }
+      header p { font-size: 0.82rem; }
       .card { display: none; }
       .mobile-list { display: block; }
-      .rate-panel { gap: 14px; padding: 14px 16px; flex-direction: column; align-items: flex-start; }
-      .btn-tool { flex: 1; justify-content: center; font-size: 0.8rem; padding: 8px 10px; }
+      .rate-panel { gap: 12px; padding: 12px 14px; flex-direction: column; align-items: flex-start; }
+      .btn-tool { flex: 1; justify-content: center; font-size: 0.78rem; padding: 8px 8px; gap: 4px; }
       .top-bar { flex-wrap: wrap; gap: 8px; }
-      .top-bar-right { width: 100%; align-items: flex-end; }
+      .top-bar-right { width: 100%; align-items: stretch; }
       .toolbar-btn-row { width: 100%; }
+      .toolbar-user-row { justify-content: space-between; }
+      .month-nav-label { min-width: 80px; font-size: 0.88rem; }
+      .center-tab { font-size: 0.82rem; padding: 6px 10px; }
+      .center-add-btn { font-size: 0.8rem; padding: 6px 10px; }
+      .month-chip { font-size: 0.74rem; padding: 3px 10px; }
     }
     .toolbar-user-row { display: flex; align-items: center; gap: 8px; }
     .toolbar-btn-row { display: flex; gap: 8px; align-items: center; }
@@ -304,7 +318,7 @@
   <p>시급을 설정하고 해당 날짜와 근무 시간을 입력하세요</p>
 </header>
 
-<!-- 센터 탭 바 -->
+<!-- 탭 바 -->
 <div class="top-bar">
   <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;">
     <div class="center-bar" id="centerBar"></div>
@@ -437,11 +451,11 @@
   · 소득세(근로소득세)는 별도이며 간이세액표 적용 시 추가 공제됩니다.
 </div>
 
-<!-- 센터 이름 편집 모달 -->
+<!-- 알바 이름 편집 모달 -->
 <div class="center-modal-overlay" id="centerModalOverlay">
   <div class="center-modal">
-    <h3 id="centerModalTitle">센터 추가</h3>
-    <input class="center-modal-input" id="centerModalInput" type="text" placeholder="센터 이름 입력" maxlength="20" />
+    <h3 id="centerModalTitle">알바 추가</h3>
+    <input class="center-modal-input" id="centerModalInput" type="text" placeholder="알바 이름 입력" maxlength="20" />
     <div class="center-modal-btns">
       <button class="btn-cancel" onclick="closeCenterModal()">취소</button>
       <button class="btn-confirm" id="centerModalConfirm" onclick="confirmCenterModal()">확인</button>
@@ -457,7 +471,7 @@
       <button class="cal-nav-btn" onclick="calClose()" title="닫기">✕</button>
     </div>
     <div class="work-entry-list" id="workEntryList"></div>
-    <button class="work-add-btn" onclick="addWorkEntry()">＋ 날짜 추가</button>
+    <div class="work-add-btn" onclick="addWorkEntry()" style="cursor:pointer;">＋ 날짜 추가</div>
     <div class="cal-popup-footer">
       <span class="cal-count-label" id="calPopupCount">입력 없음</span>
       <div class="cal-footer-btns">
@@ -481,11 +495,11 @@
   </div>
 </div>
 
-<!-- 센터 삭제 확인 모달 -->
+<!-- 알바 삭제 확인 모달 -->
 <div class="modal-overlay" id="centerDeleteModal">
   <div class="modal">
-    <h3>⚠️ 센터 삭제</h3>
-    <p><strong id="centerDeleteName"></strong> 센터의<br>모든 데이터가 삭제됩니다.<br>계속하시겠습니까?</p>
+    <h3>⚠️ 알바 삭제</h3>
+    <p><strong id="centerDeleteName"></strong> 알바의<br>모든 데이터가 삭제됩니다.<br>계속하시겠습니까?</p>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeCenterDeleteModal()">취소</button>
       <button class="btn-confirm" onclick="confirmCenterDelete()">삭제</button>
@@ -573,7 +587,7 @@
   });
 
   // ══════════════════════════════════════
-  // 센터 관리
+  // 알바 관리
   // ══════════════════════════════════════
   function centersKey() { return `slp_centers_${currentUser}`; }
   let centers = [];
@@ -582,7 +596,7 @@
 
   function loadCenters() {
     try { centers = JSON.parse(localStorage.getItem(centersKey())) || []; } catch(e) { centers = []; }
-    if (centers.length === 0) { centers = [{ id: 'c1', name: 'A센터' }]; saveCenters(); }
+    if (centers.length === 0) { centers = [{ id: 'c1', name: '알바이름' }]; saveCenters(); }
     if (!curCenterId || !centers.find(c=>c.id===curCenterId)) curCenterId = centers[0].id;
   }
   function saveCenters() { localStorage.setItem(centersKey(), JSON.stringify(centers)); }
@@ -608,7 +622,7 @@
         const del = document.createElement('button');
         del.className = 'center-tab' + (c.id === curCenterId ? ' active' : '');
         del.style.cssText = 'border-radius:0 9px 9px 0;padding:7px 9px;border-left:1px solid rgba(255,255,255,0.25);';
-        del.title = '센터 삭제';
+        del.title = '알바 삭제';
         del.textContent = '✕';
         del.onclick = (e) => deleteCenter(e, c.id);
         wrap.appendChild(del);
@@ -617,7 +631,7 @@
     });
     const addBtn = document.createElement('button');
     addBtn.className = 'center-add-btn';
-    addBtn.textContent = '+ 센터 추가';
+    addBtn.textContent = '+ 알바 추가';
     addBtn.onclick = openAddCenterModal;
     bar.appendChild(addBtn);
   }
@@ -626,7 +640,7 @@
 
   function openAddCenterModal() {
     _centerModalMode = 'add';
-    document.getElementById('centerModalTitle').textContent = '센터 추가';
+    document.getElementById('centerModalTitle').textContent = '알바 추가';
     document.getElementById('centerModalInput').value = '';
     document.getElementById('centerModalOverlay').classList.add('show');
     setTimeout(() => document.getElementById('centerModalInput').focus(), 50);
@@ -634,7 +648,7 @@
   function openRenameCenterModal(id) {
     _centerModalMode = id;
     const c = centers.find(c=>c.id===id);
-    document.getElementById('centerModalTitle').textContent = '센터 이름 변경';
+    document.getElementById('centerModalTitle').textContent = '알바 이름 변경';
     document.getElementById('centerModalInput').value = c ? c.name : '';
     document.getElementById('centerModalOverlay').classList.add('show');
     setTimeout(() => { const inp = document.getElementById('centerModalInput'); inp.focus(); inp.select(); }, 50);
@@ -661,7 +675,7 @@
   let _deletingCenterId = null;
   function deleteCenter(e, id) {
     e.stopPropagation();
-    if (centers.length <= 1) { showToast('⚠️ 센터는 최소 1개 필요합니다'); return; }
+    if (centers.length <= 1) { showToast('⚠️ 알바는 최소 1명이 필요합니다'); return; }
     const c = centers.find(c=>c.id===id);
     _deletingCenterId = id;
     document.getElementById('resetModal').classList.remove('show');
@@ -677,7 +691,7 @@
     keysToRemove.forEach(k => localStorage.removeItem(k));
     centers = centers.filter(c=>c.id!==id); saveCenters();
     if (curCenterId === id) curCenterId = centers[0].id;
-    renderCenterBar(); loadMonth(); showToast('🗑 센터가 삭제되었습니다');
+    renderCenterBar(); loadMonth(); showToast('🗑 알바가 삭제되었습니다');
   }
 
   // ══════════════════════════════════════
@@ -924,11 +938,17 @@
 
   function buildDateSummary(row) {
     if (!row.workEntries || row.workEntries.length === 0) return '';
-    return row.workEntries.slice(0,4).map(e => {
+    return row.workEntries.slice(0,5).map(e => {
       const h = parseInt(e.hours||0,10), m = parseInt(e.mins||0,10);
-      const timeStr = h||m ? ` (${h}h${m?m+'m':''})` : '';
-      return (e.date||'?') + timeStr;
-    }).join(', ') + (row.workEntries.length > 4 ? ' ...' : '');
+      const timeStr = h||m ? ` ${h}h${m?m+'m':''}` : '';
+      // 날짜를 월.일 형식으로 간결하게
+      let dateStr = e.date || '?';
+      if (e.date && e.date.length === 10) {
+        const parts = e.date.split('-');
+        dateStr = `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+      }
+      return dateStr + timeStr;
+    }).join(' · ') + (row.workEntries.length > 5 ? ' ...' : '');
   }
 
   // ── 근무 팝업 ──
@@ -992,56 +1012,66 @@
       const row = document.createElement('div');
       row.className = 'work-entry-row';
 
-      // 날짜 입력
-      const dateWrap = document.createElement('div');
-      dateWrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;';
+      // ── 상단: 날짜 + 삭제 ──
+      const topRow = document.createElement('div');
+      topRow.className = 'work-entry-row-top';
+
+      const dateLabel = document.createElement('span');
+      dateLabel.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;';
+      dateLabel.textContent = `${i+1}일차`;
+
       const dateInp = document.createElement('input');
       dateInp.type = 'date';
+      dateInp.className = 'date-input-styled';
       dateInp.value = entry.date || '';
-      dateInp.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-family:inherit;font-size:0.85rem;color:var(--text);outline:none;width:130px;';
-      dateInp.oninput = () => {
-        workEntriesTemp[i].date = dateInp.value;
-        // 요일 표시 업데이트
-        const dowEl = dateWrap.querySelector('.dow-label');
-        if (dowEl) dowEl.textContent = dateInp.value ? getDowLabel(dateInp.value) : '';
-      };
-      const dowEl = document.createElement('span');
-      dowEl.className = 'dow-label';
-      dowEl.style.cssText = 'font-size:0.7rem;color:var(--muted);padding-left:2px;';
-      dowEl.textContent = entry.date ? getDowLabel(entry.date) : '';
-      dateWrap.appendChild(dateInp);
-      dateWrap.appendChild(dowEl);
+      dateInp.oninput = () => { workEntriesTemp[i].date = dateInp.value; updateCalFooter(); };
 
-      // 시간 입력
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-del';
+      delBtn.textContent = '✕';
+      delBtn.title = '삭제';
+      delBtn.style.cssText = 'flex-shrink:0;';
+      delBtn.onclick = () => removeWorkEntry(i);
+
+      topRow.append(dateLabel, dateInp, delBtn);
+
+      // ── 하단: 시간 입력 + 소계 ──
+      const botRow = document.createElement('div');
+      botRow.className = 'work-entry-row-bottom';
+
+      const timeLabel = document.createElement('span');
+      timeLabel.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;';
+      timeLabel.textContent = '근무시간';
+
       const timeWrap = document.createElement('div');
       timeWrap.className = 'work-time-wrap';
+      timeWrap.style.cssText = 'flex:1;';
+
       const hInp = document.createElement('input');
       hInp.className = 'work-time-input';
       hInp.type = 'number'; hInp.min = 0; hInp.max = 23; hInp.placeholder = '0';
       hInp.value = entry.hours !== '' ? entry.hours : '';
       hInp.oninput = () => { workEntriesTemp[i].hours = parseInt(hInp.value,10)||0; updateEntryTotal(i, totalEl); };
+
       const sep = document.createElement('span'); sep.className = 'work-time-sep'; sep.textContent = 'h';
+
       const mInp = document.createElement('input');
       mInp.className = 'work-time-input';
       mInp.type = 'number'; mInp.min = 0; mInp.max = 59; mInp.placeholder = '0';
       mInp.value = entry.mins !== '' ? entry.mins : '';
       mInp.oninput = () => { workEntriesTemp[i].mins = parseInt(mInp.value,10)||0; updateEntryTotal(i, totalEl); };
+
       const sep2 = document.createElement('span'); sep2.className = 'work-time-sep'; sep2.textContent = 'm';
       timeWrap.append(hInp, sep, mInp, sep2);
 
-      // 소계
       const totalEl = document.createElement('div');
       totalEl.className = 'work-entry-total';
+      totalEl.style.cssText = 'flex-shrink:0;min-width:60px;';
       updateEntryTotal(i, totalEl);
 
-      // 삭제 버튼
-      const delBtn = document.createElement('button');
-      delBtn.className = 'btn-del';
-      delBtn.textContent = '✕';
-      delBtn.title = '삭제';
-      delBtn.onclick = () => removeWorkEntry(i);
+      botRow.append(timeLabel, timeWrap, totalEl);
 
-      row.append(dateWrap, timeWrap, totalEl, delBtn);
+      row.append(topRow, botRow);
       list.appendChild(row);
     });
     updateCalFooter();
