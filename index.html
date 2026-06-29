@@ -537,7 +537,7 @@
   · 4대보험 요율은 <strong>2026년 기준 직원 부담분</strong>으로, 실제 월 보수액·취득일·소득월액에 따라 달라질 수 있습니다.
   · 소득세(근로소득세)는 별도이며 간이세액표 적용 시 추가 공제됩니다.
   · <strong>2대보험(고용+산재)</strong>은 단기알바·일용직에 주로 적용되며, 산재보험료는 사업주가 전액 부담하므로 직원 공제가 없습니다. 고용보험(0.9%)만 직원 부담입니다.<br>
-  <strong>📋 주휴수당</strong> · 1주에 15시간 이상 근무 시 자동 계산됩니다. 공식: <strong>(주 근무시간 ÷ 40) × 8 × 시급</strong> (월요일 기준 주차별 합산). 최종 금액은 근무 수당 + 주휴수당의 합계입니다.
+  <strong>📋 주휴수당</strong> · 1주에 15시간 이상 근무 시 자동 계산됩니다. 공식: <strong>(주 근무시간 ÷ 5) × 시급</strong> (주 5일 기준 하루치 임금 지급, 월요일 기준 주차별 합산). 최종 금액은 근무 수당 + 주휴수당의 합계입니다.
 </div>
 
 <!-- 알바 이름 편집 모달 -->
@@ -963,8 +963,8 @@
       const weekMins = weekEntries.reduce((s, e) => s + (parseInt(e.hours||0,10)*60 + parseInt(e.mins||0,10)), 0);
       const weekHours = weekMins / 60;
       if (weekHours >= 15) {
-        // 주휴수당 = (주 근무시간 / 40) × 8 × 시급
-        total += Math.round((weekHours / 40) * 8 * rateHourly);
+        // 주휴수당 = (주 근무시간 / 5) × 시급
+        total += Math.round((weekHours / 5) * rateHourly);
       }
     });
     return total;
@@ -1631,7 +1631,7 @@
       weeks.forEach((w,wi) => {
         const weekMins = r.workEntries.filter(e=>getWeekIdxForDate(e.date,weeks)===wi)
           .reduce((a,e)=>a+(parseInt(e.hours||0,10)*60+parseInt(e.mins||0,10)),0);
-        if (weekMins/60 >= 15) wh += Math.round((weekMins/60)/40*8*60);
+        if (weekMins/60 >= 15) wh += Math.round((weekMins/60)/5*60);
       });
       return s + wh;
     }, 0);
