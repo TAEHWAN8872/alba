@@ -206,10 +206,16 @@
     .btn-add { background: none; border: 1px dashed var(--border); color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.88rem; padding: 7px 14px; border-radius: 6px; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
     .btn-add:hover { border-color: var(--accent); color: var(--accent-light); background: rgba(108,99,255,0.05); }
 
-    .summary { background: linear-gradient(135deg, rgba(23,158,104,0.08) 0%, rgba(23,158,104,0.04) 100%); border: 1px solid rgba(23,158,104,0.25); border-radius: var(--radius); max-width: 980px; margin: 16px auto 0; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .summary { background: linear-gradient(135deg, rgba(23,158,104,0.08) 0%, rgba(23,158,104,0.04) 100%); border: 1px solid rgba(23,158,104,0.25); border-radius: var(--radius); max-width: 980px; margin: 16px auto 0; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
     .summary-left .label { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); font-weight: 600; opacity: 0.7; }
     .summary-left .sub { font-size: 0.88rem; color: var(--muted); margin-top: 4px; }
     .summary-left .sub span { color: var(--text); font-weight: 600; }
+    .summary-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+    .summary-stat { background: rgba(255,255,255,0.6); border: 1px solid rgba(23,158,104,0.2); border-radius: 8px; padding: 10px 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 90px; }
+    .summary-stat-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); white-space: nowrap; }
+    .summary-stat-value { font-size: 1.05rem; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .summary-stat-value.green { color: var(--green); }
+    .summary-stat-value.yellow { color: var(--yellow); }
     .total-amount { font-size: 2rem; font-weight: 700; color: var(--green); letter-spacing: -1px; }
     .total-amount sup { font-size: 1rem; font-weight: 600; margin-right: 3px; vertical-align: super; }
 
@@ -427,7 +433,21 @@
 <div class="summary">
   <div class="summary-left">
     <div class="label">총 합계</div>
-    <div class="sub">직원 <span id="empCount">0</span>명 · 총 근무 <span id="totalHoursDisplay">0</span>시간</div>
+    <div class="sub">직원 <span id="empCount">0</span>명</div>
+  </div>
+  <div class="summary-stats">
+    <div class="summary-stat">
+      <span class="summary-stat-label">총 근무시간</span>
+      <span class="summary-stat-value green" id="totalHoursDisplay">0h</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-stat-label">주휴시간</span>
+      <span class="summary-stat-value yellow" id="totalHolidayHoursDisplay">0h</span>
+    </div>
+    <div class="summary-stat">
+      <span class="summary-stat-label">근무일</span>
+      <span class="summary-stat-value" id="totalDaysDisplay">0일</span>
+    </div>
   </div>
   <div class="total-amount"><sup>₩</sup><span id="totalDisplay">0</span></div>
 </div>
@@ -1568,7 +1588,27 @@
     document.getElementById('totalDisplay').textContent = fmt(total);
     const uniqueNames = new Set(rows.map(r=>r.name.trim()).filter(n=>n!==''));
     document.getElementById('empCount').textContent = uniqueNames.size;
-    document.getElementById('totalHoursDisplay').textContent = (totalMins/60).toFixed(1);
+    // 총 근무시간 (h m)
+    const th = Math.floor(totalMins/60), tm = totalMins%60;
+    document.getElementById('totalHoursDisplay').textContent = tm > 0 ? th+'h '+tm+'m' : th+'h';
+    // 주휴시간 합산
+    const totalHolidayMins = rows.reduce((s,r) => {
+      if (!rateHourly || !r.workEntries || r.workEntries.length===0) return s;
+      const weeks = getWeeksOfMonth(curYear, curMonth);
+      let wh = 0;
+      weeks.forEach((w,wi) => {
+        const weekMins = r.workEntries.filter(e=>getWeekIdxForDate(e.date,weeks)===wi)
+          .reduce((a,e)=>a+(parseInt(e.hours||0,10)*60+parseInt(e.mins||0,10)),0);
+        if (weekMins/60 >= 15) wh += Math.round((weekMins/60)/40*8*60);
+      });
+      return s + wh;
+    }, 0);
+    const hh = Math.floor(totalHolidayMins/60), hm = totalHolidayMins%60;
+    document.getElementById('totalHolidayHoursDisplay').textContent = hm > 0 ? hh+'h '+hm+'m' : hh+'h';
+    // 근무일 (workEntries 날짜 중복 없이 합산)
+    const allDates = new Set();
+    rows.forEach(r => (r.workEntries||[]).forEach(e => { if(e.date) allDates.add(e.date); }));
+    document.getElementById('totalDaysDisplay').textContent = allDates.size+'일';
     renderTax(total);
   }
 
