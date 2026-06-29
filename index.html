@@ -349,21 +349,86 @@
     .mobile-add-btn:hover { border-color: var(--accent); color: var(--accent-light); }
 
     @media (max-width: 680px) {
-      body { padding: 20px 12px 80px; }
-      header h1 { font-size: 1.4rem; }
-      header p { font-size: 0.82rem; }
+      body { padding: 12px 10px 80px; }
+      header { margin-bottom: 14px; }
+      header h1 { font-size: 1.25rem; }
+      header p { font-size: 0.78rem; margin-top: 3px; }
       .card { display: none; }
       .mobile-list { display: block; }
-      .rate-panel { gap: 12px; padding: 12px 14px; flex-direction: column; align-items: flex-start; }
-      .btn-tool { flex: 1; justify-content: center; font-size: 0.78rem; padding: 8px 8px; gap: 4px; }
-      .top-bar { flex-wrap: wrap; gap: 8px; }
-      .top-bar-right { width: 100%; align-items: stretch; }
-      .toolbar-btn-row { width: 100%; }
+
+      /* 탑바 */
+      .top-bar { flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+      .top-bar-right { width: 100%; align-items: stretch; gap: 6px; }
       .toolbar-user-row { justify-content: space-between; }
-      .month-nav-label { min-width: 80px; font-size: 0.88rem; }
-      .center-tab { font-size: 0.82rem; padding: 6px 10px; }
-      .center-add-btn { font-size: 0.8rem; padding: 6px 10px; }
-      .month-chip { font-size: 0.74rem; padding: 3px 10px; }
+      .login-user-badge { font-size: 0.78rem; }
+      .logout-btn { font-size: 0.74rem; padding: 4px 10px; }
+
+      /* 툴바 버튼 2x2 그리드 */
+      .toolbar-btn-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        width: 100%;
+      }
+      .btn-tool {
+        flex: unset;
+        justify-content: center;
+        font-size: 0.76rem;
+        padding: 8px 6px;
+        gap: 4px;
+        border-radius: 8px;
+      }
+
+      /* 시급 패널 */
+      .rate-panel { gap: 8px; padding: 10px 12px; flex-direction: row; align-items: center; justify-content: space-between; }
+      .rate-panel .panel-title { font-size: 0.74rem; }
+      .rate-input { width: 80px; font-size: 0.88rem; }
+
+      /* 센터 탭 */
+      .center-bar { gap: 5px; }
+      .center-tab { font-size: 0.78rem; padding: 5px 9px; }
+      .center-add-btn { font-size: 0.76rem; padding: 5px 9px; }
+
+      /* 월 네비 */
+      .month-nav-label { min-width: 72px; font-size: 0.84rem; }
+      .month-nav { padding: 5px 8px; }
+      .month-chip { font-size: 0.72rem; padding: 3px 9px; }
+
+      /* 모바일 카드 */
+      .mobile-card { padding: 12px; margin-bottom: 8px; border-radius: 10px; }
+      .mobile-card-body { grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+      .mobile-name-input { font-size: 0.95rem; }
+      .mobile-result { font-size: 1rem; }
+      .mobile-holiday { font-size: 0.9rem; }
+      .edu-trigger { min-width: 0; padding: 6px 8px; }
+      .edu-trigger-text { font-size: 0.78rem; }
+      .edu-trigger-dates { font-size: 0.68rem; }
+
+      /* 요약 */
+      .summary { padding: 14px 16px; gap: 10px; }
+      .summary-stats { gap: 7px; }
+      .summary-stat { min-width: 75px; padding: 8px 10px; }
+      .summary-stat-label { font-size: 0.62rem; }
+      .summary-stat-value { font-size: 0.92rem; }
+      .total-amount { font-size: 1.6rem; }
+
+      /* 세금 패널 */
+      .tax-panel { grid-template-columns: 1fr !important; }
+      .tax-card { padding: 14px 14px; }
+      .tax-net-amount { font-size: 1.3rem; }
+
+      /* 달력 팝업 */
+      .cal-btn-done, .cal-btn-clear { font-size: 0.82rem; padding: 7px 14px; }
+      .work-add-btn { font-size: 0.83rem; padding: 9px 10px; }
+    }
+
+    /* 아주 작은 화면 */
+    @media (max-width: 360px) {
+      body { padding: 10px 8px 80px; }
+      header h1 { font-size: 1.1rem; }
+      .btn-tool { font-size: 0.7rem; padding: 7px 4px; }
+      .center-tab { font-size: 0.72rem; padding: 5px 7px; }
+      .summary-stat { min-width: 64px; padding: 7px 8px; }
     }
     .toolbar-user-row { display: flex; align-items: center; gap: 8px; }
     .toolbar-btn-row { display: flex; gap: 8px; align-items: center; }
@@ -691,9 +756,10 @@
   // 계정 목록
   // ══════════════════════════════════════
   const ACCOUNTS = {
-    'admin':   '8b4e8274fd17ce1f4d74f566599df4f61a0d98a6d5b9218004a6c6bc05b61036',
-    'boms1107':'b588193e788b09b06840e8fc173bd070bb76d94581624119ee57af44e1815c27',
-    'gmlal81' :'4138f1e34866062eebc03c65587f223d4d1f510e22498feb8af35c156b2afa72'
+    'admin':      '8b4e8274fd17ce1f4d74f566599df4f61a0d98a6d5b9218004a6c6bc05b61036',
+    'boms1107':   'b588193e788b09b06840e8fc173bd070bb76d94581624119ee57af44e1815c27',
+    'gmlal81':    '4138f1e34866062eebc03c65587f223d4d1f510e22498feb8af35c156b2afa72',
+    'bokhodusm':  '2a6c84fb2fd4b52645e0e7664696d48e6bd260272e3882c974938a2b370e1853'
   };
 
   async function hashPassword(pw) {
@@ -702,9 +768,10 @@
   }
 
   const NAMES = {
-    'admin':   '관리자',
-    'boms1107':'광주수완점 점주님',
-    'gmlal81' :'강동상일점',
+    'admin':      '관리자',
+    'boms1107':   '광주수완점 점주님',
+    'gmlal81':    '강동상일점',
+    'bokhodusm':  '광주상무점 점주님',
   };
   function getDisplayName(id) { return NAMES[id] || id; }
 
@@ -1082,7 +1149,7 @@
     const holiday = calcHolidayPay(row);
     const totalWithHoliday = total + holiday;
     const hoursStr = mins > 0 ? `${Math.floor(mins/60)}시간 ${mins%60}분` : '–';
-    const rateDisp = rateHourly ? '₩'+fmt(rateHourly)+'/h' : '–';
+    const rateDisp = rateHourly ? '₩'+fmt(rateHourly) : '–';
     const rateClass = rateHourly ? '' : 'none';
     const resultClass = total > 0 ? 'has-val' : '';
     const holidayClass = holiday > 0 ? 'has-val' : '';
@@ -1118,7 +1185,7 @@
     const totalWithHoliday = total + holiday;
     const resultClass = total > 0 ? 'has-val' : '';
     const rateClass = rateHourly ? '' : 'none';
-    const rateDisp = rateHourly ? '₩'+fmt(rateHourly)+'/h' : '–';
+    const rateDisp = rateHourly ? '₩'+fmt(rateHourly) : '–';
     const mHolidayClass = holiday > 0 ? 'has-val' : '';
     const mHolidayDisp = holiday > 0 ? '₩ '+fmt(holiday) : '–';
     const mTotalResultClass = totalWithHoliday > 0 ? 'has-val' : '';
@@ -1681,7 +1748,7 @@
     if(mhel) { mhel.textContent=mins>0?Math.floor(mins/60)+'시간 '+mins%60+'분':'–'; mhel.style.color=mins>0?'var(--text)':'var(--muted)'; }
     // 시급 표시
     const rateClass = rateHourly ? '' : 'none';
-    const rateDisp = rateHourly ? '₩'+fmt(rateHourly)+'/h' : '–';
+    const rateDisp = rateHourly ? '₩'+fmt(rateHourly) : '–';
     const rel = document.getElementById('rate-'+id);
     if(rel) { rel.className='applied-rate '+rateClass; rel.textContent=rateDisp; }
     const mrel = document.getElementById('mrate-'+id);
