@@ -122,9 +122,9 @@
 
     /* 날짜+시간 입력 그리드 */
     .work-entry-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 60vh; overflow-y: auto; padding-right: 2px; }
-    .work-entry-row { display: flex; flex-direction: column; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
-    .work-entry-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .work-entry-row-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .work-entry-row { display: flex; flex-direction: row; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+    .work-entry-row-top { display: none; }
+    .work-entry-row-bottom { display: none; }
     .work-entry-date { font-size: 0.88rem; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 50px; }
     .work-entry-date.sun { color: #e04040; }
     .work-entry-date.sat { color: var(--accent-light); }
@@ -1148,31 +1148,29 @@
         const row = document.createElement('div');
         row.className = 'work-entry-row';
 
-        // ── 상단: 날짜 + 삭제 ──
-        const topRow = document.createElement('div');
-        topRow.className = 'work-entry-row-top';
-
+        // 요일 라벨
         const dateLabel = document.createElement('span');
-        dateLabel.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;';
-        // 요일 표시
-        let dowLabel = '';
-        if (entry.date) {
-          const d = new Date(entry.date + 'T00:00:00');
-          const DOW_KO_LOCAL = ['일','월','화','수','목','금','토'];
-          const isSun = d.getDay()===0, isSat = d.getDay()===6;
-          const color = isSun?'var(--danger)':isSat?'var(--accent-light)':'var(--muted)';
-          dateLabel.style.color = color;
-          dowLabel = DOW_KO_LOCAL[d.getDay()];
-          dateLabel.textContent = dowLabel+'요일';
-        } else {
-          dateLabel.textContent = '날짜';
+        dateLabel.style.cssText = 'font-size:0.78rem;font-weight:700;color:var(--muted);white-space:nowrap;min-width:28px;text-align:center;';
+        const DOW_KO_LOCAL = ['일','월','화','수','목','금','토'];
+        function setDateLabel(dateStr) {
+          if (dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            const isSun = d.getDay()===0, isSat = d.getDay()===6;
+            dateLabel.style.color = isSun?'var(--danger)':isSat?'var(--accent-light)':'var(--muted)';
+            dateLabel.textContent = DOW_KO_LOCAL[d.getDay()];
+          } else {
+            dateLabel.style.color = 'var(--muted)';
+            dateLabel.textContent = '–';
+          }
         }
+        setDateLabel(entry.date);
 
+        // 날짜 입력
         const dateInp = document.createElement('input');
         dateInp.type = 'date';
         dateInp.className = 'date-input-styled';
+        dateInp.style.cssText = 'flex:1.8;min-width:0;';
         dateInp.value = entry.date || '';
-        // 날짜 범위 제한 (해당 주차)
         if (week) {
           const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
           dateInp.min = pad(week.start);
@@ -1181,47 +1179,15 @@
         dateInp.oninput = () => {
           workEntriesTemp[origIdx].date = dateInp.value;
           delete workEntriesTemp[origIdx]._weekHint;
-          // 요일 라벨 실시간 업데이트
-          if (dateInp.value) {
-            const d = new Date(dateInp.value + 'T00:00:00');
-            const DOW_KO_LOCAL = ['일','월','화','수','목','금','토'];
-            const isSun = d.getDay()===0, isSat = d.getDay()===6;
-            dateLabel.style.color = isSun?'var(--danger)':isSat?'var(--accent-light)':'var(--muted)';
-            dateLabel.textContent = DOW_KO_LOCAL[d.getDay()]+'요일';
-          } else {
-            dateLabel.style.color='var(--muted)'; dateLabel.textContent='날짜';
-          }
+          setDateLabel(dateInp.value);
           updateCalFooter();
-          // 탭 뱃지 갱신
           renderWeekTabs(getWeeksOfMonth(curYear, curMonth));
         };
 
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn-del';
-        delBtn.textContent = '✕';
-        delBtn.title = '삭제';
-        delBtn.style.cssText = 'flex-shrink:0;';
-        delBtn.onclick = () => {
-          workEntriesTemp.splice(origIdx, 1);
-          const wk = getWeeksOfMonth(curYear, curMonth);
-          renderWeekTabs(wk);
-          renderWorkEntriesForWeek(wk);
-          updateCalFooter();
-        };
-
-        topRow.append(dateLabel, dateInp, delBtn);
-
-        // ── 하단: 시간 입력 + 소계 ──
-        const botRow = document.createElement('div');
-        botRow.className = 'work-entry-row-bottom';
-
-        const timeLabel = document.createElement('span');
-        timeLabel.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;';
-        timeLabel.textContent = '근무시간';
-
+        // 시간 입력
         const timeWrap = document.createElement('div');
         timeWrap.className = 'work-time-wrap';
-        timeWrap.style.cssText = 'flex:1;';
+        timeWrap.style.cssText = 'flex:1;min-width:0;';
 
         const hInp = document.createElement('input');
         hInp.className = 'work-time-input';
@@ -1240,13 +1206,27 @@
         const sep2 = document.createElement('span'); sep2.className = 'work-time-sep'; sep2.textContent = 'm';
         timeWrap.append(hInp, sep, mInp, sep2);
 
+        // 소계
         const totalEl = document.createElement('div');
         totalEl.className = 'work-entry-total';
-        totalEl.style.cssText = 'flex-shrink:0;min-width:60px;';
+        totalEl.style.cssText = 'flex-shrink:0;min-width:58px;text-align:right;';
         updateEntryTotal(origIdx, totalEl);
 
-        botRow.append(timeLabel, timeWrap, totalEl);
-        row.append(topRow, botRow);
+        // 삭제 버튼
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-del';
+        delBtn.textContent = '✕';
+        delBtn.title = '삭제';
+        delBtn.style.cssText = 'flex-shrink:0;';
+        delBtn.onclick = () => {
+          workEntriesTemp.splice(origIdx, 1);
+          const wk = getWeeksOfMonth(curYear, curMonth);
+          renderWeekTabs(wk);
+          renderWorkEntriesForWeek(wk);
+          updateCalFooter();
+        };
+
+        row.append(dateLabel, dateInp, timeWrap, totalEl, delBtn);
         list.appendChild(row);
       });
     }
