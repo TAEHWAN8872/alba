@@ -122,22 +122,23 @@
 
     /* 날짜+시간 입력 그리드 */
     .work-entry-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 60vh; overflow-y: auto; padding-right: 2px; }
-    .work-entry-row { display: flex; flex-direction: row; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+    .work-entry-row { display: flex; flex-direction: row; align-items: center; gap: 8px; background: #e8eaf2; border: 1px solid #d0d4e8; border-radius: 8px; padding: 8px 10px; }
     .work-entry-row-top { display: none; }
     .work-entry-row-bottom { display: none; }
     .work-entry-date { font-size: 0.88rem; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 50px; }
     .work-entry-date.sun { color: #e04040; }
     .work-entry-date.sat { color: var(--accent-light); }
-    .work-time-wrap { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; transition: border-color 0.2s; }
-    .work-time-wrap:focus-within { border-color: var(--accent-light); }
-    .work-time-input { background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 0.95rem; font-weight: 600; width: 40px; text-align: center; outline: none; }
-    .work-time-input::placeholder { color: var(--muted); font-weight: 400; }
-    .work-time-sep { color: var(--muted); font-size: 0.82rem; font-weight: 600; }
+    .work-time-wrap { display: flex; align-items: center; gap: 4px; background: #ffffff !important; border: 1.5px solid #b0b6d0 !important; border-radius: 6px; padding: 6px 10px; transition: border-color 0.2s; }
+    .work-time-wrap:focus-within { border-color: var(--accent-light) !important; box-shadow: 0 0 0 2px rgba(108,99,255,0.15); }
+    .work-time-input { background: transparent; border: none; color: #1a1e30 !important; font-family: inherit; font-size: 0.95rem; font-weight: 700; width: 40px; text-align: center; outline: none; }
+    .work-time-input::placeholder { color: #9098b8; font-weight: 400; }
+    .work-time-sep { color: #5a6080; font-size: 0.85rem; font-weight: 800; }
     .work-time-label { font-size: 0.72rem; color: var(--muted); }
     .work-entry-total { font-size: 0.85rem; font-weight: 700; color: var(--accent-light); white-space: nowrap; text-align: right; }
     .work-entry-total.empty { color: var(--muted); font-weight: 400; }
-    .date-input-styled { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-family: inherit; font-size: 0.88rem; color: var(--text); outline: none; flex: 1; min-width: 0; transition: border-color 0.2s; }
-    .date-input-styled:focus { border-color: var(--accent-light); }
+    .date-input-styled { background: #ffffff !important; border: 1.5px solid #b0b6d0 !important; border-radius: 6px; padding: 7px 8px; font-family: inherit; font-size: 0.88rem; color: #1a1e30 !important; outline: none; flex: 1; min-width: 0; transition: border-color 0.2s; }
+    .date-input-styled:focus { border-color: var(--accent-light) !important; box-shadow: 0 0 0 2px rgba(108,99,255,0.15); }
+    .date-input-styled::-webkit-calendar-picker-indicator { opacity: 0.8; cursor: pointer; filter: invert(0); }
 
     .work-add-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.88rem; padding: 10px 12px; border-radius: 9px; cursor: pointer; transition: all 0.15s; margin-bottom: 6px; width: 100%; }
     .work-add-btn:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.04); }
@@ -156,9 +157,10 @@
     .range-date-inp:focus { border-color: var(--accent-light); box-shadow: 0 0 0 2px rgba(108,99,255,0.15); }
     .range-date-inp::-webkit-calendar-picker-indicator { opacity: 0.7; cursor: pointer; }
     .range-sep { color: var(--muted); font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
-    .range-time-wrap { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; flex-shrink: 0; }
-    .range-time-inp { background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 0.9rem; font-weight: 600; width: 36px; text-align: center; outline: none; }
-    .range-time-sep { color: var(--muted); font-size: 0.8rem; }
+    .range-time-wrap { display: flex; align-items: center; gap: 4px; background: #fff; border: 1.5px solid #c0c5d8; border-radius: 6px; padding: 5px 8px; flex-shrink: 0; }
+    .range-time-inp { background: transparent; border: none; color: #1e2133; font-family: inherit; font-size: 0.9rem; font-weight: 700; width: 36px; text-align: center; outline: none; }
+    .range-time-inp::placeholder { color: #aab0c8; }
+    .range-time-sep { color: #6b7194; font-size: 0.8rem; font-weight: 700; }
     .range-apply-btn { background: var(--green); border: none; color: #fff; font-family: inherit; font-size: 0.84rem; font-weight: 700; padding: 8px 14px; border-radius: 7px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s; }
     .range-apply-btn:hover { background: #138a5a; }
     .range-preview { font-size: 0.75rem; color: var(--green); margin-top: 8px; font-weight: 600; }
@@ -1225,7 +1227,7 @@
         const dateInp = document.createElement('input');
         dateInp.type = 'date';
         dateInp.className = 'date-input-styled';
-        dateInp.style.cssText = 'flex:1.8;min-width:0;';
+        dateInp.style.cssText = 'flex:1.8;min-width:0;background:#fff;border:1.5px solid #b0b6d0;color:#1a1e30;';
         dateInp.value = entry.date || '';
         if (week) {
           const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1243,7 +1245,7 @@
         // 시간 입력
         const timeWrap = document.createElement('div');
         timeWrap.className = 'work-time-wrap';
-        timeWrap.style.cssText = 'flex:1;min-width:0;';
+        timeWrap.style.cssText = 'flex:1;min-width:0;background:#fff;border:1.5px solid #b0b6d0;';
 
         const hInp = document.createElement('input');
         hInp.className = 'work-time-input';
@@ -1344,13 +1346,19 @@
     panel.classList.toggle('show', _rangePanelOpen);
     btn.style.background = _rangePanelOpen ? 'rgba(23,158,104,0.12)' : '';
     if (_rangePanelOpen) {
-      // 현재 주차 기본 날짜 세팅
+      // 현재 주차 범위로 기본값 + min/max 제한
       const wk = getWeeksOfMonth(curYear, curMonth);
       const w = wk[curWeekIdx];
       if (w) {
         const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        document.getElementById('rangeStart').value = pad(w.start);
-        document.getElementById('rangeEnd').value = pad(w.end);
+        const minVal = pad(w.start);
+        const maxVal = pad(w.end);
+        const startInp = document.getElementById('rangeStart');
+        const endInp   = document.getElementById('rangeEnd');
+        startInp.min = minVal; startInp.max = maxVal;
+        endInp.min   = minVal; endInp.max   = maxVal;
+        startInp.value = minVal;
+        endInp.value   = maxVal;
       }
       updateRangePreview();
       setTimeout(() => document.getElementById('rangeHours').focus(), 50);
@@ -1369,6 +1377,13 @@
     const s = new Date(start + 'T00:00:00');
     const e = new Date(end   + 'T00:00:00');
     if (s > e) { preview.textContent = '⚠️ 시작일이 종료일보다 늦습니다'; preview.style.color = 'var(--danger)'; return; }
+    // 주차 범위 초과 경고
+    const wk = getWeeksOfMonth(curYear, curMonth);
+    const w = wk[curWeekIdx];
+    if (w && (s < w.start || e > w.end)) {
+      preview.textContent = `⚠️ ${w.label} 범위(${w.range})를 벗어납니다`;
+      preview.style.color = 'var(--danger)'; return;
+    }
     const days = Math.round((e - s) / 86400000) + 1;
     const timeStr = h || m ? `${h}h${m ? m+'m' : ''}` : '시간 미입력';
     preview.style.color = 'var(--green)';
@@ -1384,6 +1399,13 @@
     const s = new Date(start + 'T00:00:00');
     const e = new Date(end   + 'T00:00:00');
     if (s > e) { alert('시작일이 종료일보다 늦습니다.'); return; }
+    // 현재 주차 범위 검증
+    const wk = getWeeksOfMonth(curYear, curMonth);
+    const w = wk[curWeekIdx];
+    if (w && (s < w.start || e > w.end)) {
+      alert(`${w.label} 범위(${w.range})를 벗어납니다.
+해당 주차 날짜만 선택해주세요.`); return;
+    }
     const pad2 = n => String(n).padStart(2,'0');
     let cur = new Date(s);
     while (cur <= e) {
@@ -1402,7 +1424,6 @@
     _rangePanelOpen = false;
     document.getElementById('rangePanelWrap').classList.remove('show');
     document.getElementById('workRangeBtn').style.background = '';
-    const wk = getWeeksOfMonth(curYear, curMonth);
     // 추가된 첫 날짜의 주차로 이동
     const firstWi = getWeekIdxForDate(start, wk);
     if (firstWi >= 0) curWeekIdx = firstWi;
