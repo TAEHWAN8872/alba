@@ -1333,17 +1333,13 @@
       return -1;
     })();
 
-    // 자유 입력 버튼: N주차 이름일 때만 표시
+    // 자유 입력 버튼: 항상 표시
     const freeModeBtn = document.getElementById('freeModeBtn');
-    if (_allowedIdx >= 0) {
-      freeModeBtn.style.display = 'inline-flex';
-      freeModeBtn.textContent = '🔓 자유 입력';
-      freeModeBtn.style.background = 'rgba(108,99,255,0.08)';
-      freeModeBtn.style.borderColor = 'rgba(108,99,255,0.35)';
-      freeModeBtn.style.color = 'var(--accent-light)';
-    } else {
-      freeModeBtn.style.display = 'none';
-    }
+    freeModeBtn.style.display = 'inline-flex';
+    freeModeBtn.textContent = '🔓 자유 입력';
+    freeModeBtn.style.background = 'rgba(108,99,255,0.08)';
+    freeModeBtn.style.borderColor = 'rgba(108,99,255,0.35)';
+    freeModeBtn.style.color = 'var(--accent-light)';
 
     // 현재 주차 선택: 허용된 주차가 있으면 그것 우선, 아니면 데이터 있는 첫 주차, 없으면 0
     if (_allowedIdx >= 0) {
@@ -1495,7 +1491,8 @@
         dateInp.style.cssText = 'flex:1;min-width:120px;width:100%;background:#fff;border:1.5px solid #b0b6d0;color:#1a1e30;';
         dateInp.value = entry.date || '';
         const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        if (!_freeMode && week) {
+        const _allowedIdxForDate = getAllowedWeekIdx(getWeeksOfMonth(curYear, curMonth));
+        if (!_freeMode && _allowedIdxForDate >= 0 && week) {
           dateInp.min = pad(week.start);
           dateInp.max = pad(week.end);
         }
@@ -1504,8 +1501,9 @@
           if (!val) return;
           const wk2 = getWeeksOfMonth(curYear, curMonth);
           const w = wk2[curWeekIdx];
-          // 선택된 주차 범위 밖이면 강제로 해당 주차 첫날로 되돌림 (모바일 포함) — 자유 입력 모드일 때는 스킵
-          if (!_freeMode && w) {
+          const _allowedForChange = getAllowedWeekIdx(wk2);
+          // N주차 행이고 자유 입력 모드가 아닐 때만 주차 범위 밖 강제 되돌림
+          if (!_freeMode && _allowedForChange >= 0 && w) {
             const minStr = pad(w.start);
             const maxStr = pad(w.end);
             if (val < minStr || val > maxStr) {
@@ -1644,8 +1642,9 @@
       const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       const startInp = document.getElementById('rangeStart');
       const endInp   = document.getElementById('rangeEnd');
-      if (_freeMode) {
-        // 자유 입력 모드: 해당 월 전체 범위로 설정, min/max 제한 없음
+      const allowedIdxForRange = getAllowedWeekIdx(wk);
+      if (_freeMode || allowedIdxForRange < 0) {
+        // 자유 입력 모드 또는 주차 제한 없는 행: 해당 월 전체 범위로 설정
         const monthStart = new Date(curYear, curMonth - 1, 1, 12, 0, 0);
         const monthEnd   = new Date(curYear, curMonth, 0, 12, 0, 0);
         startInp.min = pad(monthStart); startInp.max = pad(monthEnd);
@@ -1680,7 +1679,8 @@
     if (s > e) { preview.textContent = '⚠️ 시작일이 종료일보다 늦습니다'; preview.style.color = 'var(--danger)'; return; }
     const wk = getWeeksOfMonth(curYear, curMonth);
     const w = wk[curWeekIdx];
-    if (!_freeMode && w && (s < w.start || e > w.end)) {
+    const allowedIdxForPreview = getAllowedWeekIdx(wk);
+    if (!_freeMode && allowedIdxForPreview >= 0 && w && (s < w.start || e > w.end)) {
       preview.textContent = `⚠️ ${w.label} 범위(${w.range})를 벗어납니다`;
       preview.style.color = 'var(--danger)'; return;
     }
@@ -1714,11 +1714,12 @@
     if (s > e) { showToast('⚠️ 시작일이 종료일보다 늦습니다'); return; }
     const wk = getWeeksOfMonth(curYear, curMonth);
     const w = wk[curWeekIdx];
+    const allowedIdxForApply = getAllowedWeekIdx(wk);
     const pad2 = n => String(n).padStart(2,'0');
     const padDate = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-    // 현재 주차 범위 문자열 (모바일에서 min/max 무시 대비 — 루프에서 직접 스킵)
-    const minStr = w ? padDate(w.start) : null;
-    const maxStr = w ? padDate(w.end)   : null;
+    // 현재 주차 범위 문자열 (N주차 행에서 주차 제한이 있을 때만 적용)
+    const minStr = (allowedIdxForApply >= 0 && !_freeMode && w) ? padDate(w.start) : null;
+    const maxStr = (allowedIdxForApply >= 0 && !_freeMode && w) ? padDate(w.end)   : null;
     let cur = new Date(s);
     let added = 0, skipped = 0;
     while (cur <= e) {
