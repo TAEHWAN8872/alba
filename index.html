@@ -139,8 +139,29 @@
     .date-input-styled { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-family: inherit; font-size: 0.88rem; color: var(--text); outline: none; flex: 1; min-width: 0; transition: border-color 0.2s; }
     .date-input-styled:focus { border-color: var(--accent-light); }
 
-    .work-add-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.88rem; padding: 10px 12px; border-radius: 9px; cursor: pointer; transition: all 0.15s; margin-bottom: 14px; width: 100%; }
+    .work-add-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.88rem; padding: 10px 12px; border-radius: 9px; cursor: pointer; transition: all 0.15s; margin-bottom: 6px; width: 100%; }
     .work-add-btn:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.04); }
+    .work-add-btn-row { display: flex; gap: 6px; margin-bottom: 14px; }
+    .work-range-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px; background: none; border: 1px dashed rgba(23,158,104,0.4); color: var(--green); font-family: inherit; font-size: 0.85rem; padding: 8px 10px; border-radius: 9px; cursor: pointer; transition: all 0.15s; }
+    .work-range-btn:hover { border-color: var(--green); background: rgba(23,158,104,0.06); }
+
+    /* 범위 입력 패널 */
+    .range-panel { background: rgba(23,158,104,0.06); border: 1px solid rgba(23,158,104,0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; display: none; }
+    .range-panel.show { display: block; }
+    .range-panel-title { font-size: 0.75rem; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+    .range-panel-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .range-date-wrap { flex-wrap: nowrap; }
+    .range-date-wrap { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+    .range-date-inp { background: #ffffff; border: 1.5px solid #c0c5d8; border-radius: 6px; padding: 7px 8px; font-family: inherit; font-size: 0.85rem; color: #1e2133; outline: none; flex: 1; min-width: 0; transition: border-color 0.2s; }
+    .range-date-inp:focus { border-color: var(--accent-light); box-shadow: 0 0 0 2px rgba(108,99,255,0.15); }
+    .range-date-inp::-webkit-calendar-picker-indicator { opacity: 0.7; cursor: pointer; }
+    .range-sep { color: var(--muted); font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+    .range-time-wrap { display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; flex-shrink: 0; }
+    .range-time-inp { background: transparent; border: none; color: var(--text); font-family: inherit; font-size: 0.9rem; font-weight: 600; width: 36px; text-align: center; outline: none; }
+    .range-time-sep { color: var(--muted); font-size: 0.8rem; }
+    .range-apply-btn { background: var(--green); border: none; color: #fff; font-family: inherit; font-size: 0.84rem; font-weight: 700; padding: 8px 14px; border-radius: 7px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s; }
+    .range-apply-btn:hover { background: #138a5a; }
+    .range-preview { font-size: 0.75rem; color: var(--green); margin-top: 8px; font-weight: 600; }
 
     .cal-popup-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border); }
     .cal-count-label { font-size: 0.82rem; color: var(--accent-light); font-weight: 700; }
@@ -495,7 +516,29 @@
     <div class="week-tab-bar" id="weekTabBar"></div>
     <div class="week-section-label" id="weekSectionLabel"></div>
     <div class="work-entry-list" id="workEntryList"></div>
-    <div class="work-add-btn" onclick="addWorkEntry()" style="cursor:pointer;" id="workAddBtn">＋ 날짜 추가</div>
+    <!-- 범위 입력 패널 -->
+    <div class="range-panel" id="rangePanelWrap">
+      <div class="range-panel-title">📅 날짜 범위로 일괄 추가</div>
+      <div class="range-panel-row">
+        <div class="range-date-wrap">
+          <input type="date" class="range-date-inp" id="rangeStart" oninput="updateRangePreview()" />
+          <span class="range-sep">~</span>
+          <input type="date" class="range-date-inp" id="rangeEnd" oninput="updateRangePreview()" />
+        </div>
+        <div class="range-time-wrap">
+          <input type="number" class="range-time-inp" id="rangeHours" min="0" max="23" placeholder="3" oninput="updateRangePreview()" />
+          <span class="range-time-sep">h</span>
+          <input type="number" class="range-time-inp" id="rangeMins" min="0" max="59" placeholder="0" oninput="updateRangePreview()" />
+          <span class="range-time-sep">m</span>
+        </div>
+        <button class="range-apply-btn" onclick="applyRangeEntries()">추가</button>
+      </div>
+      <div class="range-preview" id="rangePreview"></div>
+    </div>
+    <div class="work-add-btn-row" id="workAddBtnRow">
+      <div class="work-add-btn" onclick="addWorkEntry()" style="cursor:pointer;margin-bottom:0;flex:1;" id="workAddBtn">＋ 날짜 추가</div>
+      <button class="work-range-btn" onclick="toggleRangePanel()" id="workRangeBtn">📅 범위로 추가</button>
+    </div>
     <div class="cal-popup-footer">
       <span class="cal-count-label" id="calPopupCount">입력 없음</span>
       <div class="cal-footer-btns">
@@ -787,7 +830,7 @@
     }
     rateHourly = 0;
     document.getElementById('rateHourly').value = '';
-    addRow(); renderMonthBar();
+    WEEK_NAMES.forEach(n => { const id = idCounter++; rows.push({ id, name: n, workEntries:[] }); appendRowDOM(id); updateTrigger(id); }); renderMonthBar(); calcTotal();
   }
 
   function saveData() {
@@ -809,7 +852,7 @@
     document.getElementById('rateHourly').value = '';
     document.getElementById('tableBody').innerHTML = '';
     document.getElementById('mobileList').innerHTML = '';
-    addRow(); renderMonthBar(); showToast('🗑 초기화되었습니다');
+    WEEK_NAMES.forEach(n => { const id = idCounter++; rows.push({ id, name: n, workEntries:[] }); appendRowDOM(id); updateTrigger(id); }); renderMonthBar(); calcTotal(); showToast('🗑 초기화되었습니다');
   }
 
   function exportExcel() {
@@ -881,11 +924,24 @@
     return total;
   }
 
+  const WEEK_NAMES = ['1주차','2주차','3주차','4주차','5주차'];
+  function getNextWeekName() {
+    const usedNames = new Set(rows.map(r => r.name.trim()));
+    for (const n of WEEK_NAMES) { if (!usedNames.has(n)) return n; }
+    return '';
+  }
+
   function addRow() {
     const id = idCounter++;
-    rows.push({ id, name:'', workEntries:[] });
+    const autoName = getNextWeekName();
+    rows.push({ id, name: autoName, workEntries:[] });
     appendRowDOM(id);
-    setTimeout(()=>{ const el=document.getElementById('name-'+id); if(el)el.focus(); },30);
+    setTimeout(()=>{
+      const el=document.getElementById('name-'+id);
+      if(el){ el.value = autoName; el.focus(); if(autoName) el.select(); }
+      const mel=document.getElementById('mname-'+id);
+      if(mel) mel.value = autoName;
+    },30);
   }
 
   function appendRowDOM(id) {
@@ -1140,9 +1196,9 @@
       empty.innerHTML = `<div>이 주차에 입력된 날짜가 없어요</div>
         <button onclick="addWorkEntry()">＋ 날짜 추가</button>`;
       list.appendChild(empty);
-      document.getElementById('workAddBtn').style.display = 'none';
+      document.getElementById('workAddBtnRow').style.display = 'none';
     } else {
-      document.getElementById('workAddBtn').style.display = '';
+      document.getElementById('workAddBtnRow').style.display = '';
       weekEntries.forEach(entry => {
         const origIdx = entry.origIdx;
         const row = document.createElement('div');
@@ -1277,6 +1333,82 @@
     renderWorkEntriesForWeek(wk);
     const list = document.getElementById('workEntryList');
     setTimeout(() => { list.scrollTop = list.scrollHeight; }, 50);
+  }
+
+  // ── 범위 일괄 추가 ──
+  let _rangePanelOpen = false;
+  function toggleRangePanel() {
+    _rangePanelOpen = !_rangePanelOpen;
+    const panel = document.getElementById('rangePanelWrap');
+    const btn = document.getElementById('workRangeBtn');
+    panel.classList.toggle('show', _rangePanelOpen);
+    btn.style.background = _rangePanelOpen ? 'rgba(23,158,104,0.12)' : '';
+    if (_rangePanelOpen) {
+      // 현재 주차 기본 날짜 세팅
+      const wk = getWeeksOfMonth(curYear, curMonth);
+      const w = wk[curWeekIdx];
+      if (w) {
+        const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        document.getElementById('rangeStart').value = pad(w.start);
+        document.getElementById('rangeEnd').value = pad(w.end);
+      }
+      updateRangePreview();
+      setTimeout(() => document.getElementById('rangeHours').focus(), 50);
+    } else {
+      document.getElementById('rangePreview').textContent = '';
+    }
+  }
+
+  function updateRangePreview() {
+    const start = document.getElementById('rangeStart').value;
+    const end   = document.getElementById('rangeEnd').value;
+    const h = parseInt(document.getElementById('rangeHours').value||'0', 10) || 0;
+    const m = parseInt(document.getElementById('rangeMins').value||'0', 10) || 0;
+    const preview = document.getElementById('rangePreview');
+    if (!start || !end) { preview.textContent = ''; return; }
+    const s = new Date(start + 'T00:00:00');
+    const e = new Date(end   + 'T00:00:00');
+    if (s > e) { preview.textContent = '⚠️ 시작일이 종료일보다 늦습니다'; preview.style.color = 'var(--danger)'; return; }
+    const days = Math.round((e - s) / 86400000) + 1;
+    const timeStr = h || m ? `${h}h${m ? m+'m' : ''}` : '시간 미입력';
+    preview.style.color = 'var(--green)';
+    preview.textContent = `→ ${days}일 각각 ${timeStr} 추가됩니다`;
+  }
+
+  function applyRangeEntries() {
+    const start = document.getElementById('rangeStart').value;
+    const end   = document.getElementById('rangeEnd').value;
+    const h = parseInt(document.getElementById('rangeHours').value||'0', 10) || 0;
+    const m = parseInt(document.getElementById('rangeMins').value||'0', 10) || 0;
+    if (!start || !end) { alert('시작일과 종료일을 입력하세요.'); return; }
+    const s = new Date(start + 'T00:00:00');
+    const e = new Date(end   + 'T00:00:00');
+    if (s > e) { alert('시작일이 종료일보다 늦습니다.'); return; }
+    const pad2 = n => String(n).padStart(2,'0');
+    let cur = new Date(s);
+    while (cur <= e) {
+      const dateStr = `${cur.getFullYear()}-${pad2(cur.getMonth()+1)}-${pad2(cur.getDate())}`;
+      // 이미 같은 날짜 있으면 덮어쓰기
+      const existing = workEntriesTemp.findIndex(en => en.date === dateStr);
+      if (existing >= 0) {
+        workEntriesTemp[existing].hours = h;
+        workEntriesTemp[existing].mins  = m;
+      } else {
+        workEntriesTemp.push({ date: dateStr, hours: h, mins: m });
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+    // 패널 닫기
+    _rangePanelOpen = false;
+    document.getElementById('rangePanelWrap').classList.remove('show');
+    document.getElementById('workRangeBtn').style.background = '';
+    const wk = getWeeksOfMonth(curYear, curMonth);
+    // 추가된 첫 날짜의 주차로 이동
+    const firstWi = getWeekIdxForDate(start, wk);
+    if (firstWi >= 0) curWeekIdx = firstWi;
+    renderWeekTabs(wk);
+    renderWorkEntriesForWeek(wk);
+    updateCalFooter();
   }
 
   function removeWorkEntry(i) {
