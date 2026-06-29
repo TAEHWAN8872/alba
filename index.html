@@ -1160,17 +1160,13 @@
 
   function buildDateSummary(row) {
     if (!row.workEntries || row.workEntries.length === 0) return '';
-    return row.workEntries.slice(0,5).map(e => {
+    return row.workEntries.map(e => {
       const h = parseInt(e.hours||0,10), m = parseInt(e.mins||0,10);
-      const timeStr = h||m ? ` ${h}시간${m?m+'분':''}` : '';
-      // 날짜를 월.일 형식으로 간결하게
-      let dateStr = e.date || '?';
-      if (e.date && e.date.length === 10) {
-        const parts = e.date.split('-');
-        dateStr = `${parseInt(parts[1])}/${parseInt(parts[2])}`;
-      }
-      return dateStr + timeStr;
-    }).join(' · ') + (row.workEntries.length > 5 ? ' ...' : '');
+      const timeStr = h||m ? `(${h}h${m ? m+'m' : ''})` : '';
+      let day = '?';
+      if (e.date && e.date.length === 10) day = parseInt(e.date.split('-')[2]) + '일';
+      return day + timeStr;
+    }).join(' · ');
   }
 
   // ── 근무 팝업 (주차 탭) ──
