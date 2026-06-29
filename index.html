@@ -151,6 +151,19 @@
     .cal-btn-done { background: var(--accent); border: none; color: #fff; font-family: inherit; font-size: 0.85rem; font-weight: 700; padding: 8px 20px; border-radius: 8px; cursor: pointer; }
     .cal-btn-done:hover { background: var(--accent-light); }
 
+    /* ── 주차 탭 ── */
+    .week-tab-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .week-tab-btn { flex: 1; min-width: 0; padding: 7px 4px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-family: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.15s; text-align: center; white-space: nowrap; }
+    .week-tab-btn:hover { border-color: var(--accent-light); color: var(--accent-light); background: rgba(108,99,255,0.06); }
+    .week-tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .week-tab-btn.has-data { border-color: rgba(108,99,255,0.4); color: var(--accent-light); background: rgba(108,99,255,0.07); }
+    .week-tab-btn.active.has-data { background: var(--accent); color: #fff; }
+    .week-date-range { font-size: 0.68rem; opacity: 0.75; display: block; font-weight: 400; margin-top: 1px; }
+    .week-section-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 8px; padding: 0 2px; }
+    .week-empty { text-align: center; padding: 28px 0; color: var(--muted); font-size: 0.88rem; }
+    .week-empty button { margin-top: 10px; display: inline-flex; align-items: center; gap: 5px; padding: 7px 16px; border-radius: 8px; border: 1px dashed var(--border); background: transparent; color: var(--muted); font-family: inherit; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
+    .week-empty button:hover { border-color: var(--accent-light); color: var(--accent-light); }
+
     .applied-rate { font-size: 0.85rem; white-space: nowrap; text-align: center; font-weight: 600; color: var(--accent-light); }
     .applied-rate.none { color: var(--muted); }
 
@@ -470,12 +483,14 @@
       <div class="cal-popup-title" id="calPopupTitle">근무 일정 입력</div>
       <button class="cal-nav-btn" onclick="calClose()" title="닫기">✕</button>
     </div>
+    <div class="week-tab-bar" id="weekTabBar"></div>
+    <div class="week-section-label" id="weekSectionLabel"></div>
     <div class="work-entry-list" id="workEntryList"></div>
-    <div class="work-add-btn" onclick="addWorkEntry()" style="cursor:pointer;">＋ 날짜 추가</div>
+    <div class="work-add-btn" onclick="addWorkEntry()" style="cursor:pointer;" id="workAddBtn">＋ 날짜 추가</div>
     <div class="cal-popup-footer">
       <span class="cal-count-label" id="calPopupCount">입력 없음</span>
       <div class="cal-footer-btns">
-        <button class="cal-btn-clear" onclick="calClearAll()">전체 삭제</button>
+        <button class="cal-btn-clear" onclick="calClearCurWeek()">이 주 삭제</button>
         <button class="cal-btn-done" onclick="calClose()">완료</button>
       </div>
     </div>
@@ -951,26 +966,242 @@
     }).join(' · ') + (row.workEntries.length > 5 ? ' ...' : '');
   }
 
-  // ── 근무 팝업 ──
+  // ── 근무 팝업 (주차 탭) ──
   let calActiveId = null;
-  // workEntriesTemp: [{date:'', hours:0, mins:0}, ...]
   let workEntriesTemp = [];
+  let curWeekIdx = 0; // 현재 선택된 주차 인덱스
+
+  // 해당 연월의 주차 배열 계산 (월요일 기준)
+  // 반환: [{label:'1주차', range:'6/2~6/8', start:Date, end:Date}, ...]
+  function getWeeksOfMonth(year, month) {
+    const weeks = [];
+    const firstDay = new Date(year, month - 1, 1);
+    const lastDay  = new Date(year, month, 0);
+
+    // 첫 번째 월요일 찾기 (같은 달 기준)
+    // 달의 첫날이 속한 주의 월요일부터 시작
+    let weekStart = new Date(firstDay);
+    const dow = weekStart.getDay(); // 0=일,1=월,...
+    // 해당 주의 월요일로 이동 (일요일이면 -6, 월요일이면 0, ...)
+    const diffToMon = dow === 0 ? -6 : 1 - dow;
+    weekStart.setDate(weekStart.getDate() + diffToMon);
+
+    let weekNum = 1;
+    while (weekStart <= lastDay) {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      // 이 주에 해당 달 날짜가 하나라도 있으면 포함
+      const effStart = weekStart < firstDay ? firstDay : weekStart;
+      const effEnd   = weekEnd   > lastDay  ? lastDay  : weekEnd;
+
+      const fmt2 = d => `${d.getMonth()+1}/${d.getDate()}`;
+      weeks.push({
+        label: `${weekNum}주차`,
+        range: `${fmt2(effStart)}~${fmt2(effEnd)}`,
+        start: new Date(effStart),
+        end:   new Date(effEnd),
+      });
+
+      weekNum++;
+      weekStart.setDate(weekStart.getDate() + 7);
+    }
+    return weeks;
+  }
+
+  // 날짜 문자열(YYYY-MM-DD)이 어느 주차에 속하는지 반환 (인덱스)
+  function getWeekIdxForDate(dateStr, weeks) {
+    if (!dateStr) return -1;
+    const d = new Date(dateStr + 'T00:00:00');
+    for (let i = 0; i < weeks.length; i++) {
+      if (d >= weeks[i].start && d <= weeks[i].end) return i;
+    }
+    return -1;
+  }
 
   function openCalPopup(id) {
     calActiveId = id;
     const row = rows.find(r=>r.id===id);
     workEntriesTemp = JSON.parse(JSON.stringify(row.workEntries||[]));
-    if (workEntriesTemp.length === 0) workEntriesTemp.push({date:'', hours:'', mins:''});
-    renderWorkEntries();
+
+    // 현재 달의 주차 계산
+    const weeks = getWeeksOfMonth(curYear, curMonth);
+
+    // 현재 주차 선택: 이미 데이터가 있는 첫 주차, 없으면 0
+    curWeekIdx = 0;
+    if (workEntriesTemp.length > 0) {
+      for (let i = 0; i < workEntriesTemp.length; i++) {
+        const wi = getWeekIdxForDate(workEntriesTemp[i].date, weeks);
+        if (wi >= 0) { curWeekIdx = wi; break; }
+      }
+    }
+
+    // 팝업 제목
+    const rowName = row.name ? row.name : '이름 없음';
+    document.getElementById('calPopupTitle').innerHTML = `<span>${esc(rowName)}</span> 근무 일정`;
+
+    renderWeekTabs(weeks);
+    renderWorkEntriesForWeek(weeks);
     document.getElementById('calPopupOverlay').classList.add('show');
+  }
+
+  function renderWeekTabs(weeks) {
+    const bar = document.getElementById('weekTabBar');
+    bar.innerHTML = '';
+    weeks.forEach((w, i) => {
+      const hasData = workEntriesTemp.some(e => getWeekIdxForDate(e.date, weeks) === i && e.date);
+      const btn = document.createElement('button');
+      btn.className = 'week-tab-btn' + (i === curWeekIdx ? ' active' : '') + (hasData ? ' has-data' : '');
+      btn.innerHTML = `${w.label}<span class="week-date-range">${w.range}</span>`;
+      btn.onclick = () => {
+        const wk = getWeeksOfMonth(curYear, curMonth);
+        curWeekIdx = i;
+        renderWeekTabs(wk);
+        renderWorkEntriesForWeek(wk);
+      };
+      bar.appendChild(btn);
+    });
+  }
+
+  function renderWorkEntriesForWeek(weeks) {
+    const week = weeks[curWeekIdx];
+    document.getElementById('weekSectionLabel').textContent =
+      week ? `${week.label} (${week.range})` : '';
+
+    // 현재 주차에 해당하는 항목만 필터
+    const weekEntries = workEntriesTemp
+      .map((e, origIdx) => ({ ...e, origIdx }))
+      .filter(e => getWeekIdxForDate(e.date, weeks) === curWeekIdx || (!e.date && e._weekHint === curWeekIdx));
+
+    const list = document.getElementById('workEntryList');
+    list.innerHTML = '';
+
+    if (weekEntries.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'week-empty';
+      empty.innerHTML = `<div>이 주차에 입력된 날짜가 없어요</div>
+        <button onclick="addWorkEntry()">＋ 날짜 추가</button>`;
+      list.appendChild(empty);
+      document.getElementById('workAddBtn').style.display = 'none';
+    } else {
+      document.getElementById('workAddBtn').style.display = '';
+      weekEntries.forEach(entry => {
+        const origIdx = entry.origIdx;
+        const row = document.createElement('div');
+        row.className = 'work-entry-row';
+
+        // ── 상단: 날짜 + 삭제 ──
+        const topRow = document.createElement('div');
+        topRow.className = 'work-entry-row-top';
+
+        const dateLabel = document.createElement('span');
+        dateLabel.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;';
+        // 요일 표시
+        let dowLabel = '';
+        if (entry.date) {
+          const d = new Date(entry.date + 'T00:00:00');
+          const DOW_KO_LOCAL = ['일','월','화','수','목','금','토'];
+          const isSun = d.getDay()===0, isSat = d.getDay()===6;
+          const color = isSun?'var(--danger)':isSat?'var(--accent-light)':'var(--muted)';
+          dateLabel.style.color = color;
+          dowLabel = DOW_KO_LOCAL[d.getDay()];
+          dateLabel.textContent = dowLabel+'요일';
+        } else {
+          dateLabel.textContent = '날짜';
+        }
+
+        const dateInp = document.createElement('input');
+        dateInp.type = 'date';
+        dateInp.className = 'date-input-styled';
+        dateInp.value = entry.date || '';
+        // 날짜 범위 제한 (해당 주차)
+        if (week) {
+          const pad = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+          dateInp.min = pad(week.start);
+          dateInp.max = pad(week.end);
+        }
+        dateInp.oninput = () => {
+          workEntriesTemp[origIdx].date = dateInp.value;
+          delete workEntriesTemp[origIdx]._weekHint;
+          // 요일 라벨 실시간 업데이트
+          if (dateInp.value) {
+            const d = new Date(dateInp.value + 'T00:00:00');
+            const DOW_KO_LOCAL = ['일','월','화','수','목','금','토'];
+            const isSun = d.getDay()===0, isSat = d.getDay()===6;
+            dateLabel.style.color = isSun?'var(--danger)':isSat?'var(--accent-light)':'var(--muted)';
+            dateLabel.textContent = DOW_KO_LOCAL[d.getDay()]+'요일';
+          } else {
+            dateLabel.style.color='var(--muted)'; dateLabel.textContent='날짜';
+          }
+          updateCalFooter();
+          // 탭 뱃지 갱신
+          renderWeekTabs(getWeeksOfMonth(curYear, curMonth));
+        };
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-del';
+        delBtn.textContent = '✕';
+        delBtn.title = '삭제';
+        delBtn.style.cssText = 'flex-shrink:0;';
+        delBtn.onclick = () => {
+          workEntriesTemp.splice(origIdx, 1);
+          const wk = getWeeksOfMonth(curYear, curMonth);
+          renderWeekTabs(wk);
+          renderWorkEntriesForWeek(wk);
+          updateCalFooter();
+        };
+
+        topRow.append(dateLabel, dateInp, delBtn);
+
+        // ── 하단: 시간 입력 + 소계 ──
+        const botRow = document.createElement('div');
+        botRow.className = 'work-entry-row-bottom';
+
+        const timeLabel = document.createElement('span');
+        timeLabel.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;';
+        timeLabel.textContent = '근무시간';
+
+        const timeWrap = document.createElement('div');
+        timeWrap.className = 'work-time-wrap';
+        timeWrap.style.cssText = 'flex:1;';
+
+        const hInp = document.createElement('input');
+        hInp.className = 'work-time-input';
+        hInp.type = 'number'; hInp.min = 0; hInp.max = 23; hInp.placeholder = '0';
+        hInp.value = entry.hours !== '' ? entry.hours : '';
+        hInp.oninput = () => { workEntriesTemp[origIdx].hours = parseInt(hInp.value,10)||0; updateEntryTotal(origIdx, totalEl); };
+
+        const sep = document.createElement('span'); sep.className = 'work-time-sep'; sep.textContent = 'h';
+
+        const mInp = document.createElement('input');
+        mInp.className = 'work-time-input';
+        mInp.type = 'number'; mInp.min = 0; mInp.max = 59; mInp.placeholder = '0';
+        mInp.value = entry.mins !== '' ? entry.mins : '';
+        mInp.oninput = () => { workEntriesTemp[origIdx].mins = parseInt(mInp.value,10)||0; updateEntryTotal(origIdx, totalEl); };
+
+        const sep2 = document.createElement('span'); sep2.className = 'work-time-sep'; sep2.textContent = 'm';
+        timeWrap.append(hInp, sep, mInp, sep2);
+
+        const totalEl = document.createElement('div');
+        totalEl.className = 'work-entry-total';
+        totalEl.style.cssText = 'flex-shrink:0;min-width:60px;';
+        updateEntryTotal(origIdx, totalEl);
+
+        botRow.append(timeLabel, timeWrap, totalEl);
+        row.append(topRow, botRow);
+        list.appendChild(row);
+      });
+    }
+    updateCalFooter();
   }
 
   function calClose() {
     if (calActiveId !== null) {
       const row = rows.find(r=>r.id===calActiveId);
       if (row) {
-        // 빈 항목 제거
-        row.workEntries = workEntriesTemp.filter(e => e.date && e.date.trim());
+        row.workEntries = workEntriesTemp.filter(e => e.date && e.date.trim()).map(e => {
+          const { _weekHint, origIdx, ...rest } = e; return rest;
+        });
         updateTrigger(calActiveId);
         updateResultCell(calActiveId);
         calcTotal();
@@ -985,105 +1216,37 @@
   }
 
   function calClearAll() {
-    workEntriesTemp = [{date:'', hours:'', mins:''}];
-    renderWorkEntries();
+    workEntriesTemp = [];
+    const wk = getWeeksOfMonth(curYear, curMonth);
+    renderWeekTabs(wk);
+    renderWorkEntriesForWeek(wk);
+    updateCalFooter();
+  }
+
+  function calClearCurWeek() {
+    const wk = getWeeksOfMonth(curYear, curMonth);
+    workEntriesTemp = workEntriesTemp.filter(e => getWeekIdxForDate(e.date, wk) !== curWeekIdx);
+    renderWeekTabs(wk);
+    renderWorkEntriesForWeek(wk);
+    updateCalFooter();
   }
 
   function addWorkEntry() {
-    workEntriesTemp.push({date:'', hours:'', mins:''});
-    renderWorkEntries();
-    // 새 항목으로 스크롤
+    // 새 항목을 현재 주차 힌트와 함께 추가
+    workEntriesTemp.push({ date: '', hours: '', mins: '', _weekHint: curWeekIdx });
+    const wk = getWeeksOfMonth(curYear, curMonth);
+    renderWeekTabs(wk);
+    renderWorkEntriesForWeek(wk);
     const list = document.getElementById('workEntryList');
     setTimeout(() => { list.scrollTop = list.scrollHeight; }, 50);
   }
 
   function removeWorkEntry(i) {
     workEntriesTemp.splice(i, 1);
-    if (workEntriesTemp.length === 0) workEntriesTemp.push({date:'', hours:'', mins:''});
-    renderWorkEntries();
-  }
-
-  const DOW_KO = ['일','월','화','수','목','금','토'];
-
-  function renderWorkEntries() {
-    const list = document.getElementById('workEntryList');
-    list.innerHTML = '';
-    workEntriesTemp.forEach((entry, i) => {
-      const row = document.createElement('div');
-      row.className = 'work-entry-row';
-
-      // ── 상단: 날짜 + 삭제 ──
-      const topRow = document.createElement('div');
-      topRow.className = 'work-entry-row-top';
-
-      const dateLabel = document.createElement('span');
-      dateLabel.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;';
-      dateLabel.textContent = `${i+1}일차`;
-
-      const dateInp = document.createElement('input');
-      dateInp.type = 'date';
-      dateInp.className = 'date-input-styled';
-      dateInp.value = entry.date || '';
-      dateInp.oninput = () => { workEntriesTemp[i].date = dateInp.value; updateCalFooter(); };
-
-      const delBtn = document.createElement('button');
-      delBtn.className = 'btn-del';
-      delBtn.textContent = '✕';
-      delBtn.title = '삭제';
-      delBtn.style.cssText = 'flex-shrink:0;';
-      delBtn.onclick = () => removeWorkEntry(i);
-
-      topRow.append(dateLabel, dateInp, delBtn);
-
-      // ── 하단: 시간 입력 + 소계 ──
-      const botRow = document.createElement('div');
-      botRow.className = 'work-entry-row-bottom';
-
-      const timeLabel = document.createElement('span');
-      timeLabel.style.cssText = 'font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);white-space:nowrap;';
-      timeLabel.textContent = '근무시간';
-
-      const timeWrap = document.createElement('div');
-      timeWrap.className = 'work-time-wrap';
-      timeWrap.style.cssText = 'flex:1;';
-
-      const hInp = document.createElement('input');
-      hInp.className = 'work-time-input';
-      hInp.type = 'number'; hInp.min = 0; hInp.max = 23; hInp.placeholder = '0';
-      hInp.value = entry.hours !== '' ? entry.hours : '';
-      hInp.oninput = () => { workEntriesTemp[i].hours = parseInt(hInp.value,10)||0; updateEntryTotal(i, totalEl); };
-
-      const sep = document.createElement('span'); sep.className = 'work-time-sep'; sep.textContent = 'h';
-
-      const mInp = document.createElement('input');
-      mInp.className = 'work-time-input';
-      mInp.type = 'number'; mInp.min = 0; mInp.max = 59; mInp.placeholder = '0';
-      mInp.value = entry.mins !== '' ? entry.mins : '';
-      mInp.oninput = () => { workEntriesTemp[i].mins = parseInt(mInp.value,10)||0; updateEntryTotal(i, totalEl); };
-
-      const sep2 = document.createElement('span'); sep2.className = 'work-time-sep'; sep2.textContent = 'm';
-      timeWrap.append(hInp, sep, mInp, sep2);
-
-      const totalEl = document.createElement('div');
-      totalEl.className = 'work-entry-total';
-      totalEl.style.cssText = 'flex-shrink:0;min-width:60px;';
-      updateEntryTotal(i, totalEl);
-
-      botRow.append(timeLabel, timeWrap, totalEl);
-
-      row.append(topRow, botRow);
-      list.appendChild(row);
-    });
+    const wk = getWeeksOfMonth(curYear, curMonth);
+    renderWeekTabs(wk);
+    renderWorkEntriesForWeek(wk);
     updateCalFooter();
-  }
-
-  function getDowLabel(dateStr) {
-    try {
-      const d = new Date(dateStr + 'T00:00:00');
-      const dow = DOW_KO[d.getDay()];
-      const isSun = d.getDay() === 0, isSat = d.getDay() === 6;
-      return `(${dow})`;
-    } catch(e) { return ''; }
   }
 
   function updateEntryTotal(i, el) {
